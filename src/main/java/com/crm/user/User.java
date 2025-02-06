@@ -18,8 +18,7 @@ public class User {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
 	private String role; /* (Admin/Sales/CRM) */
-	private String firstName;
-	private String lastName;
+	private String name;
 	private String email;
 	private String mobile;
 	private Status action; /* (Block/Unblock) */
@@ -51,20 +50,12 @@ public class User {
 		this.role = role;
 	}
 
-	public String getFirstName() {
-		return firstName;
+	public String getName() {
+		return name;
 	}
 
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public String getEmail() {
@@ -144,14 +135,12 @@ public class User {
 		this.createdOn = System.currentTimeMillis();
 	}
 
-	public User(long id, String role, String firstName, String lastName, String email, String mobile, Status action,
-			String password, String otp, LocalDateTime otpCreationTime, long createdOn, long updatedOn,
-			String profilePic) {
+	public User(long id, String role, String name, String email, String mobile, Status action, String password,
+			String otp, LocalDateTime otpCreationTime, long createdOn, long updatedOn, String profilePic) {
 		super();
 		this.id = id;
 		this.role = role;
-		this.firstName = firstName;
-		this.lastName = lastName;
+		this.name = name;
 		this.email = email;
 		this.mobile = mobile;
 		this.action = action;
@@ -165,10 +154,10 @@ public class User {
 
 	@Override
 	public String toString() {
-		return "User [id=" + id + ", role=" + role + ", firstName=" + firstName + ", lastName=" + lastName + ", email="
-				+ email + ", mobile=" + mobile + ", action=" + action + ", password=" + password + ", otp=" + otp
-				+ ", otpCreationTime=" + otpCreationTime + ", createdOn=" + createdOn + ", updatedOn=" + updatedOn
-				+ ", profilePic=" + profilePic + "]";
+		return "User [id=" + id + ", role=" + role + ", name=" + name + ", email=" + email + ", mobile=" + mobile
+				+ ", action=" + action + ", password=" + password + ", otp=" + otp + ", otpCreationTime="
+				+ otpCreationTime + ", createdOn=" + createdOn + ", updatedOn=" + updatedOn + ", profilePic="
+				+ profilePic + "]";
 	}
 
 }

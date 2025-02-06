@@ -5,11 +5,10 @@ import jakarta.persistence.PrePersist;
 public class UserDTO {
 
 	private long id;
-	private String firstName;
-	private String lastName;
+	private String name;
 	private String email;
 	private String mobile;
-	private String roleName;
+	private String role;
 	private long createdOn;
 	private String action;
 	private String profilePic;
@@ -25,20 +24,12 @@ public class UserDTO {
 		this.id = id;
 	}
 
-	public String getFirstName() {
-		return firstName;
+	public String getName() {
+		return name;
 	}
 
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public String getEmail() {
@@ -57,12 +48,12 @@ public class UserDTO {
 		this.mobile = mobile;
 	}
 
-	public String getRoleName() {
-		return roleName;
+	public String getRole() {
+		return role;
 	}
 
-	public void setRoleName(String roleName) {
-		this.roleName = roleName;
+	public void setRole(String role) {
+		this.role = role;
 	}
 
 	public long getCreatedOn() {
@@ -71,11 +62,6 @@ public class UserDTO {
 
 	public void setCreatedOn(long createdOn) {
 		this.createdOn = createdOn;
-	}
-
-	@PrePersist
-	protected void prePersistFunction() {
-		this.createdOn = System.currentTimeMillis();
 	}
 
 	public String getAction() {
@@ -94,15 +80,19 @@ public class UserDTO {
 		this.profilePic = profilePic;
 	}
 
-	public UserDTO(long id, String firstName, String lastName, String email, String mobile, String roleName,
-			long createdOn, String action, String profilePic) {
+	@PrePersist
+	protected void prePersistFunction() {
+		this.createdOn = System.currentTimeMillis();
+	}
+
+	public UserDTO(long id, String name, String email, String mobile, String role, long createdOn, String action,
+			String profilePic) {
 		super();
 		this.id = id;
-		this.firstName = firstName;
-		this.lastName = lastName;
+		this.name = name;
 		this.email = email;
 		this.mobile = mobile;
-		this.roleName = roleName;
+		this.role = role;
 		this.createdOn = createdOn;
 		this.action = action;
 		this.profilePic = profilePic;
@@ -110,9 +100,19 @@ public class UserDTO {
 
 	@Override
 	public String toString() {
-		return "UserDTO [id=" + id + ", firstName=" + firstName + ", lastName=" + lastName + ", email=" + email
-				+ ", mobile=" + mobile + ", roleName=" + roleName + ", createdOn=" + createdOn + ", action=" + action
-				+ ", profilePic=" + profilePic + "]";
+		return "UserDTO [id=" + id + ", name=" + name + ", email=" + email + ", mobile=" + mobile + ", role=" + role
+				+ ", createdOn=" + createdOn + ", action=" + action + ", profilePic=" + profilePic + "]";
+	}
+
+	public UserDTO(User user) {
+		this.id = user.getId();
+		this.name = user.getName();
+		this.email = user.getEmail();
+		this.mobile = user.getMobile();
+		this.role = user.getRole();
+		this.profilePic = user.getProfilePic();
+		this.action = user.getAction().toString();
+		this.createdOn = user.getCreatedOn();
 	}
 
 }

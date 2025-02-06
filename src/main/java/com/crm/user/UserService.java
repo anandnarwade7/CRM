@@ -1,12 +1,15 @@
 package com.crm.user;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CookieValue;
 
 import com.crm.Exception.Error;
 import com.crm.security.JwtUtil;
@@ -32,8 +35,8 @@ public class UserService {
 			ObjectMapper objectMapper = new ObjectMapper();
 			ObjectNode responseJson = objectMapper.createObjectNode();
 			responseJson.put("id", user.getId());
-			responseJson.put("firstName", user.getFirstName());
-			responseJson.put("lastName", user.getLastName());
+			responseJson.put("name", user.getName());
+//			responseJson.put("lastName", user.getLastName());
 			responseJson.put("email", user.getEmail());
 			responseJson.put("mobile", user.getMobile());
 			responseJson.put("role", user.getRole());
@@ -53,8 +56,8 @@ public class UserService {
 			ObjectMapper objectMapper = new ObjectMapper();
 			ObjectNode responseJson = objectMapper.createObjectNode();
 			responseJson.put("id", user.getId());
-			responseJson.put("firstName", user.getFirstName());
-			responseJson.put("lastName", user.getLastName());
+			responseJson.put("name", user.getName());
+//			responseJson.put("lastName", user.getLastName());
 			responseJson.put("email", user.getEmail());
 			responseJson.put("mobile", user.getMobile());
 			responseJson.put("role", user.getRole());
@@ -88,14 +91,14 @@ public class UserService {
 				throw new UserServiceException(409, "Email already exist");
 			}
 			String password = jsonNode.get("password").asText();
-			String firstName = jsonNode.get("firstName").asText();
-			String lastName = jsonNode.get("lastName").asText();
+			String name = jsonNode.get("name").asText();
+//			String lastName = jsonNode.get("lastName").asText();
 //			String role = jsonNode.get("role").asText();
 			String mobile = jsonNode.get("mobile").asText();
 
 			User user = new User();
-			user.setFirstName(firstName);
-			user.setLastName(lastName);
+			user.setName(name);
+//			user.setLastName(lastName);
 			user.setEmail(email);
 			user.setPassword(password);
 			user.setMobile(mobile);
@@ -135,14 +138,14 @@ public class UserService {
 				throw new UserServiceException(409, "Email already exist");
 			}
 			String password = jsonNode.get("password").asText();
-			String firstName = jsonNode.get("firstName").asText();
-			String lastName = jsonNode.get("lastName").asText();
+			String name = jsonNode.get("name").asText();
+//			String lastName = jsonNode.get("lastName").asText();
 			String userRole = jsonNode.get("role").asText();
 			String mobile = jsonNode.get("mobile").asText();
 
 			User user = new User();
-			user.setFirstName(firstName);
-			user.setLastName(lastName);
+			user.setName(name);
+//			user.setLastName(lastName);
 			user.setEmail(email);
 			user.setPassword(password);
 			user.setMobile(mobile);
@@ -159,7 +162,7 @@ public class UserService {
 		}
 	}
 
-	public ResponseEntity<?> authenticateUser(String user , HttpServletResponse response) {
+	public ResponseEntity<?> authenticateUser(String user, HttpServletResponse response) {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode jsonNode = objectMapper.readTree(user);
@@ -189,13 +192,14 @@ public class UserService {
 
 				String token = jwtUtil.createToken(byEmail.getEmail(), byEmail.getRole());
 				System.out.println("Token Created Successfully :: " + token);
-				
-				   Cookie cookie = new Cookie("token", token);
-		            cookie.setHttpOnly(true); // Helps mitigate XSS attacks
-		            cookie.setSecure(false); // Ensures cookies are sent over HTTPS only (set to false in development environments without HTTPS)
-		            cookie.setMaxAge(60 * 30); // Set the expiry time (30 minutes)
-		            cookie.setPath("/"); // Set the path to make the cookie available across the entire domain
-		            response.addCookie(cookie);
+
+				Cookie cookie = new Cookie("token", token);
+				cookie.setHttpOnly(true); // Helps mitigate XSS attacks
+				cookie.setSecure(false); // Ensures cookies are sent over HTTPS only (set to false in development
+											// environments without HTTPS)
+				cookie.setMaxAge(60 * 30); // Set the expiry time (30 minutes)
+				cookie.setPath("/"); // Set the path to make the cookie available across the entire domain
+				response.addCookie(cookie);
 				String userObject = getUserObject1(byEmail, token);
 				return ResponseEntity.ok(userObject);
 
@@ -276,7 +280,7 @@ public class UserService {
 		}
 	}
 
-	public ResponseEntity<?> getSales(String token, long id) {
+	public ResponseEntity<?> getSalesById(String token, long id) {
 		try {
 			if (jwtUtil.isTokenExpired(token)) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
@@ -330,8 +334,7 @@ public class UserService {
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			dbUser.setFirstName(user.getFirstName());
-			dbUser.setLastName(user.getLastName());
+			dbUser.setName(user.getName());
 			dbUser.setMobile(user.getMobile());
 			User existingUser = repository.save(dbUser);
 			String userObject = getUserObject(existingUser);
@@ -385,30 +388,68 @@ public class UserService {
 
 	public ResponseEntity<?> deleteUser(String authorization, long adminId, long userId) {
 		try {
-		if (jwtUtil.isTokenExpired(authorization)) {
+			if (jwtUtil.isTokenExpired(authorization)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String role = jwtUtil.extractRole(authorization);
+
+			if ("ADMIN".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			Optional<User> byId = repository.findById(userId);
+			User user = byId.get();
+			repository.deleteById(userId);
+
+			return ResponseEntity.ok(user.getRole() + " Deleted Successfully !!!! ");
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to Register User", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			throw new UserServiceException(409, " Invalid Credentials ");
+		}
+	}
+
+	public ResponseEntity<?> getUsersListByRole(@CookieValue(value = "accessToken", required = false) String token,
+			String role) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String adminRole = jwtUtil.extractRole(token);
+			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			List<User> users = repository.findByRole(role.equalsIgnoreCase("SALES") ? "SALES" : "CRM");
+
+			if (users.isEmpty()) {
+				return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND)
+						.body("User not found: No users with the given role exist.");
+			}
+
+			List<UserDTO> userDTOList = users.stream().map(UserDTO::new).collect(Collectors.toList());
+
+			return ResponseEntity.ok(userDTOList);
+
+		} catch (ExpiredJwtException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 					.body("Unauthorized: Your session has expired.");
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
 		}
 
-		String role = jwtUtil.extractRole(authorization);
-
-
-		if ("ADMIN".equalsIgnoreCase(role)) {
-			return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
-					.body("Forbidden: You do not have the necessary permissions.");
-		}
-		
-		Optional<User> byId = repository.findById(userId);
-		User user = byId.get();
-		repository.deleteById(userId);
-		
-
-		return ResponseEntity.ok(user.getRole()+" Deleted Successfully !!!! ");
-	}catch (UserServiceException e) {
-		return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
-				"Unable to Register User", System.currentTimeMillis()));
-	} catch (Exception ex) {
-		throw new UserServiceException(409, " Invalid Credentials ");
-	}
 	}
 }
