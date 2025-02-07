@@ -7,9 +7,15 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import com.crm.Exception.Error;
 import com.crm.security.JwtUtil;
@@ -414,7 +420,7 @@ public class UserService {
 	}
 
 	public ResponseEntity<?> getUsersListByRole(@CookieValue(value = "accessToken", required = false) String token,
-			String role) {
+			int page, String role) {
 		try {
 			if (token == null) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
@@ -431,17 +437,17 @@ public class UserService {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
+			role = role.trim();
+			Pageable pageable = PageRequest.of(page - 1, 20);
+			Page<User> usersPage = repository.findByRoleOrderByCreatedOnDesc(role, pageable);
 
-			List<User> users = repository.findByRole(role.equalsIgnoreCase("SALES") ? "SALES" : "CRM");
-
-			if (users.isEmpty()) {
-				return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND)
-						.body("User not found: No users with the given role exist.");
+			if (usersPage.isEmpty()) {
+				return ResponseEntity.ok("No users found for the role: " + role);
 			}
 
-			List<UserDTO> userDTOList = users.stream().map(UserDTO::new).collect(Collectors.toList());
+			List<UserDTO> userDTOs = usersPage.getContent().stream().map(UserDTO::new).collect(Collectors.toList());
 
-			return ResponseEntity.ok(userDTOList);
+			return ResponseEntity.ok(userDTOs);
 
 		} catch (ExpiredJwtException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
@@ -451,5 +457,34 @@ public class UserService {
 					.body("Internal Server Error: " + e.getMessage());
 		}
 
+	}
+
+	public ResponseEntity<?> getTotalCountForAdmin(String token, String role) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String adminRole = jwtUtil.extractRole(token);
+			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			List<User> allByUserId = repository.findByRole(role);
+			int size = allByUserId.size();
+			int pages = (int) Math.ceil((double) size / 20);
+			if (pages == 0) {
+				pages = 1;
+			}
+			return ResponseEntity.ok(pages);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
+		}
 	}
 }

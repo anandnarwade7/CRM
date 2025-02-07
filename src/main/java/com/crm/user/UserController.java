@@ -1,6 +1,9 @@
 package com.crm.user;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -12,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.crm.Exception.Error;
+
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
@@ -134,13 +139,22 @@ public class UserController {
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getUsers")
 	public ResponseEntity<?> getUsersListByRole(@CookieValue(value = "token", required = false) String token,
-			@RequestParam String role) {
+			@RequestParam int page, @RequestParam String role) {
 		try {
-			return service.getUsersListByRole(token, role);
+			return service.getUsersListByRole(token, page, role);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
 	}
 
+	@GetMapping("/getCountByRole/{role}")
+	public ResponseEntity<?> getTotalCountForAdmin(@CookieValue(value = "token", required = false) String token,
+			@PathVariable String role) {
+		try {
+			return service.getTotalCountForAdmin(token, role);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
+		}
+	}
 }
