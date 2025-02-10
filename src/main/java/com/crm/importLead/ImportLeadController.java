@@ -4,11 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.user.UserServiceException;
 
 @RestController
@@ -17,8 +17,7 @@ public class ImportLeadController {
 
 	@Autowired
 	private ImportLeadService service;
-	
-	
+
 	@PostMapping("/upload-template")
 	public ResponseEntity<?> uploadTemplate(@RequestParam long userId, @RequestParam("file") MultipartFile file) {
 		if (file.isEmpty()) {
@@ -33,6 +32,18 @@ public class ImportLeadController {
 			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
 		} catch (Exception e) {
 			System.out.println("In Second Catch Block");
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PutMapping("/assignLeads")
+	public ResponseEntity<?> assignLeadsToSaled() {
+		try {
+			return service.assignLeadsToSaled();
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}

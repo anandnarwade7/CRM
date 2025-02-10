@@ -199,36 +199,33 @@ public class ImportLeadService {
 	public ResponseEntity<?> assignLeadsToSaled() {
 		try {
 			List<User> salesUsers = userRepository.findUsersByRole("SALES");
-	        List<ImportLead> unassignedLeads = repository.findLeadsWhereAssignedToIsZero();
+			List<ImportLead> unassignedLeads = repository.findLeadsWhereAssignedToIsZero();
 
 			if (salesUsers.isEmpty() || unassignedLeads.isEmpty()) {
-	            return ResponseEntity.ok("No sales users or leads available for assignment.");
-	        }
+				return ResponseEntity.ok("No sales users or leads available for assignment.");
+			}
 
-	        int totalSalesUsers = salesUsers.size();
-	        int totalLeads = unassignedLeads.size();
-	        int leadsPerUser = totalLeads / totalSalesUsers;
-	        int remainingLeads = totalLeads % totalSalesUsers;
+			int totalSalesUsers = salesUsers.size();
+			int totalLeads = unassignedLeads.size();
+			int leadsPerUser = totalLeads / totalSalesUsers;
+			int remainingLeads = totalLeads % totalSalesUsers;
 
-	        int leadIndex = 0;
-	        for (int i = 0; i < totalSalesUsers; i++) {
-	            User salesUser = salesUsers.get(i);
-	            for (int j = 0; j < leadsPerUser; j++) {
-	                unassignedLeads.get(leadIndex).setAssignedTo(salesUser.getId());
-	                leadIndex++;
-	            }
-	        }
+			int leadIndex = 0;
+			for (User salesUser : salesUsers) {
+				for (int j = 0; j < leadsPerUser; j++) {
+					unassignedLeads.get(leadIndex).setAssignedTo(salesUser.getId());
+					leadIndex++;
+				}
+			}
 
-	        for (int i = 0; i < remainingLeads; i++) {
-	            unassignedLeads.get(leadIndex).setAssignedTo(salesUsers.get(i).getId());
-	            leadIndex++;
-	        }
+			for (int i = 0; i < remainingLeads; i++) {
+				unassignedLeads.get(leadIndex).setAssignedTo(salesUsers.get(i % totalSalesUsers).getId());
+				leadIndex++;
+			}
 
-	        repository.saveAll(unassignedLeads);
+			List<ImportLead> saveAll = repository.saveAll(unassignedLeads);
 
-			
-
-			return ResponseEntity.ok(null);
+			return ResponseEntity.ok(saveAll);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));

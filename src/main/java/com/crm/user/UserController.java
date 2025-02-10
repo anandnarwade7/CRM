@@ -1,7 +1,5 @@
 package com.crm.user;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,9 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.crm.Exception.Error;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
@@ -101,10 +97,10 @@ public class UserController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PutMapping("/addDetails/{userId}")
-	public ResponseEntity<?> updateUserForRegistration(@CookieValue(value = "token", required = false) String token,
-			@PathVariable long adminId, @RequestBody User user) {
+	public ResponseEntity<?> updateUserDetails(@CookieValue(value = "token", required = false) String token,
+			@PathVariable long userId, @RequestBody User user) {
 		try {
-			return service.updateAdminForRegistration(token, adminId, user);
+			return service.updateUserDetails(token, userId, user);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Invalid User Credentials", System.currentTimeMillis()));

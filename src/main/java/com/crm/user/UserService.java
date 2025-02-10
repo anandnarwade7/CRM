@@ -5,24 +5,19 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.PathVariable;
-
 import com.crm.Exception.Error;
 import com.crm.security.JwtUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -318,7 +313,7 @@ public class UserService {
 		}
 	}
 
-	public ResponseEntity<?> updateAdminForRegistration(String token, long userId, User user) {
+	public ResponseEntity<?> updateUserDetails(String token, long userId, User user) {
 		try {
 			System.out.println("Check 1");
 
@@ -340,8 +335,18 @@ public class UserService {
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			dbUser.setName(user.getName());
-			dbUser.setMobile(user.getMobile());
+			if (user.getName() != null && !user.getName().isEmpty()) {
+				dbUser.setName(user.getName());
+			}
+			if (user.getMobile() != null && !user.getMobile().isEmpty()) {
+				dbUser.setMobile(user.getMobile());
+			}
+			if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+				dbUser.setEmail(user.getEmail());
+			}
+			if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+				dbUser.setPassword(user.getPassword());
+			}
 			User existingUser = repository.save(dbUser);
 			String userObject = getUserObject(existingUser);
 			return ResponseEntity.ok(userObject);
@@ -370,12 +375,12 @@ public class UserService {
 			}
 			User dbUser = byId.get();
 
-			if ("ADMIN".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			if ("unBlock".equalsIgnoreCase(response)) {
+			if ("unblock".equalsIgnoreCase(response)) {
 				dbUser.setAction(Status.UNBLOCK);
 			} else if ("block".equalsIgnoreCase(response)) {
 				dbUser.setAction(Status.BLOCK);
@@ -438,7 +443,7 @@ public class UserService {
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 			role = role.trim();
-			Pageable pageable = PageRequest.of(page - 1, 20);
+			Pageable pageable = PageRequest.of(page - 1, 10);
 			Page<User> usersPage = repository.findByRoleOrderByCreatedOnDesc(role, pageable);
 
 			if (usersPage.isEmpty()) {
@@ -478,7 +483,7 @@ public class UserService {
 			}
 			List<User> allByUserId = repository.findByRole(role);
 			int size = allByUserId.size();
-			int pages = (int) Math.ceil((double) size / 20);
+			int pages = (int) Math.ceil((double) size / 10);
 			if (pages == 0) {
 				pages = 1;
 			}
