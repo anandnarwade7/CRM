@@ -37,7 +37,7 @@ public class UserController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PostMapping("/addUser/{id}")
-	public ResponseEntity<?> registerUser(@CookieValue(value = "token", required = false) String token,
+	public ResponseEntity<?> registerUser(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id, @RequestBody String userJson) {
 		try {
 			return service.addUser(token, id, userJson);
@@ -61,7 +61,7 @@ public class UserController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getAdminById/{id}")
-	public ResponseEntity<?> getUser(@CookieValue(value = "token", required = false) String token,
+	public ResponseEntity<?> getUser(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return service.getAdmin(token, id);
@@ -73,7 +73,7 @@ public class UserController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getCRMById/{id}")
-	public ResponseEntity<?> getCRM(@CookieValue(value = "token", required = false) String token,
+	public ResponseEntity<?> getCRM(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return service.getCRM(token, id);
@@ -85,7 +85,7 @@ public class UserController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getSalesById/{id}")
-	public ResponseEntity<?> getSales(@CookieValue(value = "token", required = false) String token,
+	public ResponseEntity<?> getSales(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return service.getSalesById(token, id);
@@ -109,7 +109,7 @@ public class UserController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PutMapping("/updateUser/{adminId}/{response}")
-	public ResponseEntity<?> updateUserAsBlockUnBlock(@CookieValue(value = "token", required = false) String token,
+	public ResponseEntity<?> updateUserAsBlockUnBlock(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long adminId, @PathVariable String response,
 			@RequestParam(name = "note", required = false) String note) {
 		try {
@@ -122,7 +122,7 @@ public class UserController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PutMapping("/deleteUser/{adminId}/{userId}")
-	public ResponseEntity<?> deleteUser(@CookieValue(value = "token", required = false) String token,
+	public ResponseEntity<?> deleteUser(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long adminId, @PathVariable long userId) {
 		try {
 			return service.deleteUser(token, adminId, userId);
@@ -134,7 +134,7 @@ public class UserController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getUsers")
-	public ResponseEntity<?> getUsersListByRole(@CookieValue(value = "token", required = false) String token,
+	public ResponseEntity<?> getUsersListByRole(@CookieValue(value = "token", required = true) String token,
 			@RequestParam int page, @RequestParam String role) {
 		try {
 			return service.getUsersListByRole(token, page, role);
@@ -144,8 +144,19 @@ public class UserController {
 		}
 	}
 
+	@CrossOrigin(origins = { ("http://localhost:3000") })
+	@GetMapping("/getSales")
+	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "token", required = true) String token) {
+		try {
+			return service.getSalesListByRole(token);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
+		}
+	}
+
 	@GetMapping("/getCountByRole/{role}")
-	public ResponseEntity<?> getTotalCountForAdmin(@CookieValue(value = "token", required = false) String token,
+	public ResponseEntity<?> getTotalCountForAdmin(@CookieValue(value = "token", required = true) String token,
 			@PathVariable String role) {
 		try {
 			return service.getTotalCountForAdmin(token, role);

@@ -330,7 +330,7 @@ public class UserService {
 			}
 			User dbUser = byId.get();
 
-			if (!dbUser.getRole().equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !dbUser.getRole().equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
@@ -462,6 +462,42 @@ public class UserService {
 					.body("Internal Server Error: " + e.getMessage());
 		}
 
+	}
+
+	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "accessToken", required = false) String token) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String adminRole = jwtUtil.extractRole(token);
+			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			List<User> users = repository.findByRoleOrderByCreatedOnDesc("SALES");
+
+			if (users.isEmpty()) {
+				return ResponseEntity.ok("No users found for the role: " + "SALES");
+			}
+
+			List<UserDTO> userDTOs = users.stream().map(UserDTO::new).collect(Collectors.toList());
+
+			return ResponseEntity.ok(userDTOs);
+
+		} catch (ExpiredJwtException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+					.body("Unauthorized: Your session has expired.");
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
+		}
 	}
 
 	public ResponseEntity<?> getTotalCountForAdmin(String token, String role) {

@@ -21,4 +21,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	@Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role) ORDER BY u.createdOn DESC")
 	Page<User> findByRoleOrderByCreatedOnDesc(String role, Pageable pageable);
 
+	@Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role) ORDER BY u.createdOn DESC")
+	List<User> findByRoleOrderByCreatedOnDesc(String role);
+
 }

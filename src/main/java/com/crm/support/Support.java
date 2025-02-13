@@ -1,11 +1,18 @@
 package com.crm.support;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import com.crm.user.Status;
+import com.crm.user.User;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 
 @Entity
 public class Support {
@@ -13,7 +20,10 @@ public class Support {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
-	private long userId;
+	@ManyToOne
+	@JoinColumn(name = "user_id")
+	@OnDelete(action = OnDeleteAction.SET_NULL)
+	private User user;
 	private String query;
 	private long createdOn;
 	private Status status;
@@ -25,12 +35,12 @@ public class Support {
 		return id;
 	}
 
-	public long getUserId() {
-		return userId;
+	public User getUser() {
+		return user;
 	}
 
-	public void setUserId(long userId) {
-		this.userId = userId;
+	public void setUser(User user) {
+		this.user = user;
 	}
 
 	public Status getStatus() {
@@ -73,10 +83,15 @@ public class Support {
 		this.createdOn = createdOn;
 	}
 
-	public Support(long id, long userId, Status status, String query, long createdOn) {
+	@PrePersist
+	protected void prePersistFunction() {
+		this.createdOn = System.currentTimeMillis();
+	}
+
+	public Support(long id, User user, Status status, String query, long createdOn) {
 		super();
 		this.id = id;
-		this.userId = userId;
+		this.user = user;
 		this.status = status;
 		this.query = query;
 		this.createdOn = createdOn;
@@ -84,7 +99,7 @@ public class Support {
 
 	@Override
 	public String toString() {
-		return "Support [id=" + id + ", userId=" + userId + ", status=" + status + ", query=" + query + ", createdOn="
+		return "Support [id=" + id + ", user=" + user + ", status=" + status + ", query=" + query + ", createdOn="
 				+ createdOn + "]";
 	}
 

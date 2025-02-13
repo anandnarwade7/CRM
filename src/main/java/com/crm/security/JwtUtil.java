@@ -17,7 +17,8 @@ public class JwtUtil {
 	private final String SECRET_KEY = "Deqzfgkivkalsuetyf=nwxxn12ndiendi34mnvnbxvsgeirolfjfuywbqhbwuxnnfkfpogmmvbfmvormvkrmvjvnmtovmtmgvmgitmvtimggitjgitmfjswe432=0";
 //	private final String SECRET_KEY = "xJUDiCOlbfONweKhAM0i0X9jrMXTEEZV27sm+fGkfEcEbzH5aUfz+dQNYVTANOkbXFffonAtVJrPUmfTGvpyeQ==";
 
-	private static final long EXPIRATION_TIME = 1000 * 60 * 30; // 30 minutes
+//	private static final long EXPIRATION_TIME = 1000 * 60 * 30; 
+	private static final long EXPIRATION_TIME = 1000 * 60 *60 *6; 
 	private JwtParser jwtParser;
 	private final String TOKEN_HEADER = "Authorization";
 	private final String TOKEN_PREFIX = "Bearer";

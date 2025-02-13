@@ -1,9 +1,13 @@
 package com.crm.importLead;
 
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -12,11 +16,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import com.crm.Exception.Error;
+import com.crm.security.JwtUtil;
 import com.crm.user.Status;
 import com.crm.user.User;
 import com.crm.user.UserRepository;
 import com.crm.user.UserServiceException;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Service
 public class ImportLeadService {
@@ -26,6 +34,9 @@ public class ImportLeadService {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private JwtUtil jwtUtil;
 
 //	public ResponseEntity<?> processFile(String adSetId, MultipartFile file, String type) {
 //		System.out.println("Check Point 1 ");
@@ -134,33 +145,132 @@ public class ImportLeadService {
 //		return true;
 //	}
 
-	public ResponseEntity<?> readLeadsFromExcel(long userId, MultipartFile file) {
+//	public ResponseEntity<?> readLeadsFromExcel(long userId, List<Long> assignedTo, MultipartFile file) {
+//		int processedCount = 0;
+//		int skippedCount = 0;
+//
+//		try (InputStream inputStream = file.getInputStream(); Workbook workbook = WorkbookFactory.create(inputStream)) {
+//
+//			Sheet sheet = workbook.getSheetAt(0);
+//			Iterator<Row> rowIterator = sheet.iterator();
+//
+//			if (rowIterator.hasNext()) {
+//				rowIterator.next();
+//			}
+//
+//			List<ImportLead> leadsToSave = new ArrayList<>();
+//			List<Long> assignedToList = new ArrayList<>(assignedTo);
+//			int assignedToSize = assignedToList.size();
+//			int index = 0;
+//
+//			while (rowIterator.hasNext()) {
+//				Row row = rowIterator.next();
+//
+//				String email = row.getCell(1) != null ? row.getCell(1).getStringCellValue() : "";
+//				String mobileNumber = row.getCell(2) != null ? row.getCell(2).getStringCellValue() : "";
+//				String name = row.getCell(3) != null ? row.getCell(3).getStringCellValue() : "";
+//				String propertyRange = row.getCell(4) != null ? row.getCell(4).getStringCellValue() : "";
+//				String callTime = row.getCell(5) != null ? row.getCell(5).getStringCellValue() : "";
+//				String ad = row.getCell(6) != null ? row.getCell(6).getStringCellValue() : "";
+//				String adSet = row.getCell(7) != null ? row.getCell(7).getStringCellValue() : "";
+//				String campaign = row.getCell(8) != null ? row.getCell(8).getStringCellValue() : "";
+//				String city = row.getCell(9) != null ? row.getCell(9).getStringCellValue() : "";
+//
+//				boolean isDuplicate = repository.existsByAdNameAndAdSetAndCampaignAndCity(ad, adSet, campaign, city);
+//				if (isDuplicate) {
+//					System.out.println("Duplicate entry skipped: " + ad + ", " + adSet + ", " + campaign + ", " + city);
+//					skippedCount++;
+//					continue;
+//				}
+//
+//				ImportLead lead = new ImportLead();
+//				lead.setName(name);
+//				lead.setEmail(email);
+//				lead.setMobileNumber(mobileNumber);
+//				lead.setDate(System.currentTimeMillis());
+//				lead.setUserId(userId);
+//				lead.setStatus(Status.PENDING);
+//				lead.setAdName(ad);
+//				lead.setAdSet(adSet);
+//				lead.setCampaign(campaign);
+//				lead.setCity(city);
+//				lead.setCallTime(callTime);
+//				lead.setPropertyRange(propertyRange);
+//
+//				lead.setAssignedTo(assignedToList.get(index % assignedToSize));
+//				index++;
+//
+//				leadsToSave.add(lead);
+//				processedCount++;
+//			}
+//
+//			repository.saveAll(leadsToSave);
+//			return ResponseEntity
+//					.ok("File processed successfully. Processed: " + processedCount + ", Skipped: " + skippedCount);
+//
+//		} catch (UserServiceException e) {
+//			return ResponseEntity.status(e.getStatusCode()).body(
+//					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+//		} catch (Exception ex) {
+//			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+//		}
+//	}
+
+	public ResponseEntity<?> readLeadsFromExcel(String token, long userId, List<Long> assignedTo, MultipartFile file) {
 		int processedCount = 0;
 		int skippedCount = 0;
+		if (jwtUtil.isTokenExpired(token)) {
+			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+					.body("Unauthorized: Your session has expired.");
+		}
+
+		String role = jwtUtil.extractRole(token);
+
+		if (!"ADMIN".equalsIgnoreCase(role)) {
+			return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+					.body("Forbidden: You do not have the necessary permissions.");
+		}
 
 		try (InputStream inputStream = file.getInputStream(); Workbook workbook = WorkbookFactory.create(inputStream)) {
-
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
 
-			if (rowIterator.hasNext()) {
-				rowIterator.next();
+			if (!rowIterator.hasNext()) {
+				throw new UserServiceException(400, "Uploaded file does not contain any data.");
 			}
+
+			rowIterator.next();
+
+			List<ImportLead> leadsToSave = new ArrayList<>();
+			List<Long> assignedToList = (assignedTo != null) ? new ArrayList<>(assignedTo) : new ArrayList<>();
+			int assignedToSize = assignedToList.size();
+
+			int index = 0;
 
 			while (rowIterator.hasNext()) {
 				Row row = rowIterator.next();
 
-				String email = row.getCell(1) != null ? row.getCell(1).getStringCellValue() : "";
-				String mobileNumber = row.getCell(2) != null ? row.getCell(2).getStringCellValue() : "";
-				String name = row.getCell(3) != null ? row.getCell(3).getStringCellValue() : "";
-				String propertyRange = row.getCell(4) != null ? row.getCell(4).getStringCellValue() : "";
-				String callTime = row.getCell(5) != null ? row.getCell(5).getStringCellValue() : "";
-				String ad = row.getCell(6) != null ? row.getCell(6).getStringCellValue() : "";
-				String adSet = row.getCell(7) != null ? row.getCell(7).getStringCellValue() : "";
-				String campaign = row.getCell(8) != null ? row.getCell(8).getStringCellValue() : "";
-				String city = row.getCell(9) != null ? row.getCell(9).getStringCellValue() : "";
+				Cell emailCell = row.getCell(1);
+				Cell mobileCell = row.getCell(2);
+				Cell nameCell = row.getCell(3);
+				Cell propertyRangeCell = row.getCell(4);
+				Cell callTimeCell = row.getCell(5);
+				Cell adCell = row.getCell(6);
+				Cell adSetCell = row.getCell(7);
+				Cell campaignCell = row.getCell(8);
+				Cell cityCell = row.getCell(9);
 
-				boolean isDuplicate = repository.existsByAdNameAndAdSetAndCampaignAndCity(ad, adSet, campaign, city);
+				String email = (emailCell != null) ? emailCell.getStringCellValue() : "";
+				String mobileNumber = getCellValueAsString(mobileCell);
+				String name = (nameCell != null) ? nameCell.getStringCellValue() : "";
+				String propertyRange = (propertyRangeCell != null) ? propertyRangeCell.getStringCellValue() : "";
+				String callTime = (callTimeCell != null) ? callTimeCell.getStringCellValue() : "";
+				String ad = (adCell != null) ? adCell.getStringCellValue() : "";
+				String adSet = (adSetCell != null) ? adSetCell.getStringCellValue() : "";
+				String campaign = (campaignCell != null) ? campaignCell.getStringCellValue() : "";
+				String city = (cityCell != null) ? cityCell.getStringCellValue() : "";
+
+				boolean isDuplicate = repository.existsByEmailAndAdNameAndAdSetAndCampaignAndCity(email, ad, adSet, campaign, city);
 				if (isDuplicate) {
 					System.out.println("Duplicate entry skipped: " + ad + ", " + adSet + ", " + campaign + ", " + city);
 					skippedCount++;
@@ -181,10 +291,19 @@ public class ImportLeadService {
 				lead.setCallTime(callTime);
 				lead.setPropertyRange(propertyRange);
 
-				repository.save(lead);
+				if (!assignedToList.isEmpty()) {
+					lead.setAssignedTo(assignedToList.get(index % assignedToSize));
+					index++;
+				}
+
+				leadsToSave.add(lead);
 				processedCount++;
 			}
 
+			repository.saveAll(leadsToSave);
+			if (assignedToList.isEmpty()) {
+				assignLeadsToSaled();
+			} 
 			return ResponseEntity
 					.ok("File processed successfully. Processed: " + processedCount + ", Skipped: " + skippedCount);
 
@@ -192,7 +311,31 @@ public class ImportLeadService {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
 		} catch (Exception ex) {
+			ex.printStackTrace();
 			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+		}
+	}
+
+	private String getCellValueAsString(Cell cell) {
+		if (cell == null) {
+			return "";
+		}
+		switch (cell.getCellType()) {
+		case STRING:
+			return cell.getStringCellValue();
+		case NUMERIC:
+			if (DateUtil.isCellDateFormatted(cell)) {
+				return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue()); // Format date if applicable
+			} else {
+				return String.valueOf((long) cell.getNumericCellValue()); // Convert numeric value to string (removes
+																			// decimal)
+			}
+		case BOOLEAN:
+			return String.valueOf(cell.getBooleanCellValue());
+		case FORMULA:
+			return cell.getCellFormula();
+		default:
+			return "";
 		}
 	}
 
