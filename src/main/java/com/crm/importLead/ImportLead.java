@@ -38,6 +38,7 @@ public class ImportLead {
 	@Column(name = "jsonData", nullable = true, length = 2000)
 	private String jsonData;
 	private long importedOn;
+	private String salesPerson;
 
 	public ImportLead() {
 	}
@@ -175,9 +176,17 @@ public class ImportLead {
 		this.importedOn = System.currentTimeMillis();
 	}
 
+	public String getSalesPerson() {
+		return salesPerson;
+	}
+
+	public void setSalesPerson(String salesPerson) {
+		this.salesPerson = salesPerson;
+	}
+
 	public ImportLead(long id, String name, String email, String mobileNumber, long date, long userId, long assignedTo,
 			Status status, String adName, String adSet, String campaign, String city, String callTime,
-			String propertyRange, String jsonData, long importedOn) {
+			String propertyRange, String jsonData, String salesPerson, long importedOn) {
 		this.id = id;
 		this.name = name;
 		this.email = email;
@@ -193,6 +202,7 @@ public class ImportLead {
 		this.callTime = callTime;
 		this.propertyRange = propertyRange;
 		this.jsonData = jsonData;
+		this.salesPerson = salesPerson;
 		this.importedOn = importedOn;
 	}
 
@@ -202,7 +212,7 @@ public class ImportLead {
 				+ ", date=" + date + ", userId=" + userId + ", assignedTo=" + assignedTo + ", status=" + status
 				+ ", adName=" + adName + ", adSet=" + adSet + ", campaign=" + campaign + ", city=" + city
 				+ ", callTime=" + callTime + ", propertyRange=" + propertyRange + ", jsonData=" + jsonData
-				+ ", importedOn=" + importedOn + "]";
+				+ ", importedOn=" + importedOn + ", salesPerson=" + salesPerson + "]";
 	}
 
 }

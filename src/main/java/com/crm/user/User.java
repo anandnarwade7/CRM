@@ -3,10 +3,14 @@ package com.crm.user;
 import java.time.LocalDateTime;
 
 import jakarta.annotation.Nullable;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -21,6 +25,8 @@ public class User {
 	private String name;
 	private String email;
 	private String mobile;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "action", length = 100)
 	private Status action; /* (Block/Unblock) */
 	private String password;
 	@Nullable
@@ -135,6 +141,11 @@ public class User {
 		this.createdOn = System.currentTimeMillis();
 	}
 
+	@PostPersist
+	protected void postPersistFunction() {
+		this.updatedOn = System.currentTimeMillis();
+	}
+	
 	public User(long id, String role, String name, String email, String mobile, Status action, String password,
 			String otp, LocalDateTime otpCreationTime, long createdOn, long updatedOn, String profilePic) {
 		super();

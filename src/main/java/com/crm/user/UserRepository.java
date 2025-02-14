@@ -24,4 +24,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	@Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role) ORDER BY u.createdOn DESC")
 	List<User> findByRoleOrderByCreatedOnDesc(String role);
 
+	User findSalesById(Long long1);
+
 }

@@ -13,6 +13,9 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -270,7 +273,8 @@ public class ImportLeadService {
 				String campaign = (campaignCell != null) ? campaignCell.getStringCellValue() : "";
 				String city = (cityCell != null) ? cityCell.getStringCellValue() : "";
 
-				boolean isDuplicate = repository.existsByEmailAndAdNameAndAdSetAndCampaignAndCity(email, ad, adSet, campaign, city);
+				boolean isDuplicate = repository.existsByEmailAndAdNameAndAdSetAndCampaignAndCity(email, ad, adSet,
+						campaign, city);
 				if (isDuplicate) {
 					System.out.println("Duplicate entry skipped: " + ad + ", " + adSet + ", " + campaign + ", " + city);
 					skippedCount++;
@@ -283,7 +287,7 @@ public class ImportLeadService {
 				lead.setMobileNumber(mobileNumber);
 				lead.setDate(System.currentTimeMillis());
 				lead.setUserId(userId);
-				lead.setStatus(Status.PENDING);
+				lead.setStatus(Status.ASSIGNED);
 				lead.setAdName(ad);
 				lead.setAdSet(adSet);
 				lead.setCampaign(campaign);
@@ -293,6 +297,9 @@ public class ImportLeadService {
 
 				if (!assignedToList.isEmpty()) {
 					lead.setAssignedTo(assignedToList.get(index % assignedToSize));
+					User salesById = userRepository.findSalesById(assignedToList.get(index % assignedToSize));
+					lead.setSalesPerson(salesById.getName());
+
 					index++;
 				}
 
@@ -303,7 +310,7 @@ public class ImportLeadService {
 			repository.saveAll(leadsToSave);
 			if (assignedToList.isEmpty()) {
 				assignLeadsToSaled();
-			} 
+			}
 			return ResponseEntity
 					.ok("File processed successfully. Processed: " + processedCount + ", Skipped: " + skippedCount);
 
@@ -325,10 +332,9 @@ public class ImportLeadService {
 			return cell.getStringCellValue();
 		case NUMERIC:
 			if (DateUtil.isCellDateFormatted(cell)) {
-				return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue()); // Format date if applicable
+				return new SimpleDateFormat("yyyy-MM-dd").format(cell.getDateCellValue());
 			} else {
-				return String.valueOf((long) cell.getNumericCellValue()); // Convert numeric value to string (removes
-																			// decimal)
+				return String.valueOf((long) cell.getNumericCellValue());
 			}
 		case BOOLEAN:
 			return String.valueOf(cell.getBooleanCellValue());
@@ -363,12 +369,51 @@ public class ImportLeadService {
 
 			for (int i = 0; i < remainingLeads; i++) {
 				unassignedLeads.get(leadIndex).setAssignedTo(salesUsers.get(i % totalSalesUsers).getId());
+				unassignedLeads.get(leadIndex).setSalesPerson(salesUsers.get(i % totalSalesUsers).getName());
 				leadIndex++;
 			}
 
 			List<ImportLead> saveAll = repository.saveAll(unassignedLeads);
 
 			return ResponseEntity.ok(saveAll);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+		}
+	}
+
+	public ResponseEntity<?> assignLeads(String token, int page, String status) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String adminRole = jwtUtil.extractRole(token);
+			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			Pageable pageable = PageRequest.of(page - 1, 10);
+			Page<ImportLead> unassignedLeads = null;
+			if (status.equalsIgnoreCase("assigned")) {
+				unassignedLeads = repository.findByStatusOrderByImportedOnDesc(Status.ASSIGNED, pageable);
+			} else if (status.equalsIgnoreCase("completed")) {
+				unassignedLeads = repository.findByStatusOrderByImportedOnDesc(Status.COMPLETED, pageable);
+			}
+
+			if (unassignedLeads.isEmpty()) {
+				return ResponseEntity.ok("No leads found");
+			}
+			return ResponseEntity.ok(unassignedLeads);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));

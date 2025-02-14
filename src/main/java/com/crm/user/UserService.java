@@ -424,7 +424,7 @@ public class UserService {
 		}
 	}
 
-	public ResponseEntity<?> getUsersListByRole(@CookieValue(value = "accessToken", required = false) String token,
+	public ResponseEntity<?> getUsersListByRole(String token,
 			int page, String role) {
 		try {
 			if (token == null) {
