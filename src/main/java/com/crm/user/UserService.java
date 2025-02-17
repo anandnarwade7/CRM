@@ -424,8 +424,7 @@ public class UserService {
 		}
 	}
 
-	public ResponseEntity<?> getUsersListByRole(String token,
-			int page, String role) {
+	public ResponseEntity<?> getUsersListByRole(String token, int page, String role) {
 		try {
 			if (token == null) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)

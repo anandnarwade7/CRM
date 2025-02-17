@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.crm.Exception.Error;
 import com.crm.user.UserServiceException;
 
 @RestController
@@ -85,6 +87,18 @@ public class ImportLeadController {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+	
+	@CrossOrigin(origins = { ("http://localhost:3000") })
+	@GetMapping("/getLeadsById/{id}")
+	public ResponseEntity<?> getSales(@CookieValue(value = "token", required = true) String token,
+			@PathVariable long id) {
+		try {
+			return service.getLeadsById(token, id);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
 	}
 }

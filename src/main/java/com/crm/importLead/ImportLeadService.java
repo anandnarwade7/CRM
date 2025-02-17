@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -27,6 +28,7 @@ import com.crm.user.User;
 import com.crm.user.UserRepository;
 import com.crm.user.UserServiceException;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Service
@@ -419,6 +421,38 @@ public class ImportLeadService {
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
 		} catch (Exception ex) {
 			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+		}
+	}
+
+	public ResponseEntity<?> getLeadsById(String token, long id) {
+		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String role = jwtUtil.extractRole(token);
+
+			if (!"SALES".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			 Optional<ImportLead> byId = repository.findById(id);
+			if (byId.isPresent()) {
+				ImportLead importLead = byId.get();
+				return ResponseEntity.ok(importLead);
+			} else {
+				throw new UserServiceException(401, "User not exists");
+			}
+		} catch (ExpiredJwtException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+					.body("Unauthorized: Your session has expired.");
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("User not found: " + e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
 		}
 	}
 }
