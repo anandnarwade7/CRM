@@ -1,4 +1,4 @@
-package com.crm.Notifications;
+package com.crm.notifications;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.crm.Notifications;
+package com.crm.notifications;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

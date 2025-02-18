@@ -1,4 +1,4 @@
-package com.crm.Notifications;
+package com.crm.notifications;
 
 public class NotificationException extends RuntimeException {
 

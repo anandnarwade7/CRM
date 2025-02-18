@@ -1,6 +1,14 @@
 package com.crm.importLead;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.crm.user.Status;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +19,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "importLead")
@@ -35,10 +44,20 @@ public class ImportLead {
 	private String callTime;
 	private String propertyRange;
 //	private List<String> fields;
-	@Column(name = "jsonData", nullable = true, length = 2000)
+	@Column(name = "jsonData", nullable = true, length = 4000)
 	private String jsonData;
 	private long importedOn;
 	private String salesPerson;
+	@Column(name = "dynamicFields", nullable = true, length = 2000)
+	private String dynamicFieldsJson;
+
+	private String leadStatus;
+
+	@Transient
+	private List<Map<String, String>> conversationLogs = new ArrayList<>();
+
+	@Transient
+	private Map<String, Object> dynamicFields = new HashMap<>();
 
 	public ImportLead() {
 	}
@@ -184,9 +203,27 @@ public class ImportLead {
 		this.salesPerson = salesPerson;
 	}
 
+	public void setDynamicFieldsJson(String dynamicFieldsJson) {
+		this.dynamicFieldsJson = dynamicFieldsJson;
+	}
+
+	public String getDynamicFieldsJson() {
+		return dynamicFieldsJson;
+	}
+
+	public String getLeadStatus() {
+		return leadStatus;
+	}
+
+	public void setLeadStatus(String leadStatus) {
+		this.leadStatus = leadStatus;
+	}
+
 	public ImportLead(long id, String name, String email, String mobileNumber, long date, long userId, long assignedTo,
 			Status status, String adName, String adSet, String campaign, String city, String callTime,
-			String propertyRange, String jsonData, String salesPerson, long importedOn) {
+			String propertyRange, String jsonData, long importedOn, String salesPerson, String dynamicFieldsJson,
+			String leadStatus, List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields) {
+		super();
 		this.id = id;
 		this.name = name;
 		this.email = email;
@@ -202,8 +239,68 @@ public class ImportLead {
 		this.callTime = callTime;
 		this.propertyRange = propertyRange;
 		this.jsonData = jsonData;
-		this.salesPerson = salesPerson;
 		this.importedOn = importedOn;
+		this.salesPerson = salesPerson;
+		this.dynamicFieldsJson = dynamicFieldsJson;
+		this.leadStatus = leadStatus;
+		this.conversationLogs = conversationLogs;
+		this.dynamicFields = dynamicFields;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Map<String, String>> getConversationLogs() {
+		if (jsonData != null) {
+			ObjectMapper objectMapper = new ObjectMapper();
+			try {
+				conversationLogs = objectMapper.readValue(jsonData, List.class);
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+		}
+		return conversationLogs;
+	}
+
+	public void addConversationLog(String date, String comment) {
+		Map<String, String> logEntry = new HashMap<>();
+		logEntry.put("date", date);
+		logEntry.put("comment", comment);
+
+		List<Map<String, String>> logs = getConversationLogs();
+		logs.add(logEntry);
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			this.jsonData = objectMapper.writeValueAsString(logs);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static final ObjectMapper objectMapper = new ObjectMapper();
+
+	public Map<String, Object> getDynamicFields() {
+		if (this.dynamicFieldsJson == null || this.dynamicFieldsJson.isEmpty()) {
+			return new HashMap<>();
+		}
+		try {
+			return objectMapper.readValue(this.dynamicFieldsJson, new TypeReference<Map<String, Object>>() {
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new HashMap<>();
+		}
+	}
+
+	public void addDynamicField(String key, Object value) {
+		Map<String, Object> fields = getDynamicFields();
+		fields.put(key, value);
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			this.dynamicFieldsJson = objectMapper.writeValueAsString(fields);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -212,7 +309,9 @@ public class ImportLead {
 				+ ", date=" + date + ", userId=" + userId + ", assignedTo=" + assignedTo + ", status=" + status
 				+ ", adName=" + adName + ", adSet=" + adSet + ", campaign=" + campaign + ", city=" + city
 				+ ", callTime=" + callTime + ", propertyRange=" + propertyRange + ", jsonData=" + jsonData
-				+ ", importedOn=" + importedOn + ", salesPerson=" + salesPerson + "]";
+				+ ", importedOn=" + importedOn + ", salesPerson=" + salesPerson + ", dynamicFieldsJson="
+				+ dynamicFieldsJson + ", leadStatus=" + leadStatus + ", conversationLogs=" + conversationLogs
+				+ ", dynamicFields=" + dynamicFields + "]";
 	}
 
 }

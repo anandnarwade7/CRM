@@ -7,10 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.crm.Exception.Error;
+import com.crm.notifications.NotificationsRepository;
 import com.crm.user.Status;
 import com.crm.user.User;
 import com.crm.user.UserServiceException;
-import com.crm.Notifications.NotificationsRepository;
 import com.crm.user.UserRepository;
 
 @Service

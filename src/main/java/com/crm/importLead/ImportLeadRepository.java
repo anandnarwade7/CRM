@@ -23,4 +23,7 @@ public interface ImportLeadRepository extends JpaRepository<ImportLead, Long> {
 	@Query("SELECT u FROM ImportLead u WHERE u.status = :status ORDER BY u.importedOn DESC")
 	Page<ImportLead> findByStatusOrderByImportedOnDesc(@Param("status") Status status, Pageable pageable);
 
+	@Query("SELECT l FROM ImportLead l WHERE l.assignedTo = :id ORDER BY l.importedOn DESC")
+	Page<ImportLead> findByAssignedToOrderByImportedOnDesc(@Param("id") long id, Pageable pageable);
+
 }

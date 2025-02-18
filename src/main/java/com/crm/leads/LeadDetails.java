@@ -18,7 +18,7 @@ public class LeadDetails {
 	private String leadContactDate;
 //	private List<String> leadMassages;
 
-	@Column(name = "jsonData", nullable = true, length = 2000)
+	@Column(name = "jsonData", nullable = true, length = 4000)
 	private String massagesJsonData;
 
 	private long userId;

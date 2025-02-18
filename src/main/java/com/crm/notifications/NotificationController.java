@@ -1,4 +1,4 @@
-package com.crm.Notifications;
+package com.crm.notifications;
 
 import java.util.Comparator;
 import java.util.List;
