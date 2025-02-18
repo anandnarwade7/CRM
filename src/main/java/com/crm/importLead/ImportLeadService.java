@@ -739,8 +739,8 @@ public class ImportLeadService {
 	}
 
 	@Transactional
-	public ImportLead addConversationLogAndDynamicField(Long leadId, String status, String comment, String key,
-			Object value) {
+	public ImportLead addConversationLogAndDynamicField(Long leadId, String status, String comment, List<String> key,
+			List<Object> value) {
 
 		ImportLead lead = repository.findById(leadId)
 				.orElseThrow(() -> new RuntimeException("Lead not found with ID: " + leadId));
@@ -761,9 +761,11 @@ public class ImportLeadService {
 			}
 		}
 
-		if (key != null && value != null) {
+		if (key != null && value != null && key.size() == value.size()) {
 			Map<String, Object> fields = getDynamicFields(lead);
-			fields.put(key, value);
+			for (int i = 0; i < key.size(); i++) {
+				fields.put(key.get(i), value.get(i));
+			}
 
 			try {
 				lead.setDynamicFieldsJson(objectMapper.writeValueAsString(fields));

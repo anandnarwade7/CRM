@@ -143,8 +143,8 @@ public class ImportLeadController {
 
 	@PostMapping("/updateFields/{leadId}")
 	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) String status,
-			@RequestParam(required = false) String comment, @RequestParam(required = false) String key,
-			@RequestParam(required = false) Object value) {
+			@RequestParam(required = false) String comment, @RequestParam(required = false) List<String> key,
+			@RequestParam(required = false) List<Object> value) {
 		try {
 			return ResponseEntity.ok(service.addConversationLogAndDynamicField(leadId, status, comment, key, value));
 		} catch (UserServiceException e) {
