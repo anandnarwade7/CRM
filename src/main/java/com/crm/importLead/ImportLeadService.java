@@ -4,13 +4,11 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
@@ -24,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.Exception.Error;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
@@ -36,7 +33,6 @@ import com.crm.user.UserServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -745,12 +741,12 @@ public class ImportLeadService {
 		ImportLead lead = repository.findById(leadId)
 				.orElseThrow(() -> new RuntimeException("Lead not found with ID: " + leadId));
 
-		String formattedDate = new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date());
+//		String formattedDate = new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date());
 
 		if (comment != null) {
 			List<Map<String, String>> logs = getConversationLogs(lead);
 			Map<String, String> logEntry = new HashMap<>();
-			logEntry.put("date", formattedDate);
+//			logEntry.put("date", formattedDate);
 			logEntry.put("comment", comment);
 
 			logs.add(logEntry);
@@ -762,13 +758,17 @@ public class ImportLeadService {
 		}
 
 		if (key != null && value != null && key.size() == value.size()) {
-			Map<String, Object> fields = getDynamicFields(lead);
+//			Map<String, Object> fields = getDynamicFields(lead);
+			List<Map<String, Object>> fieldsList = new ArrayList<>();
 			for (int i = 0; i < key.size(); i++) {
-				fields.put(key.get(i), value.get(i));
+//				fields.put(key.get(i), value.get(i));
+				Map<String, Object> fieldEntry = new HashMap<>();
+				fieldEntry.put(key.get(i), value.get(i));
+				fieldsList.add(fieldEntry);
 			}
 
 			try {
-				lead.setDynamicFieldsJson(objectMapper.writeValueAsString(fields));
+				lead.setDynamicFieldsJson(objectMapper.writeValueAsString(fieldsList));
 			} catch (JsonProcessingException e) {
 				throw new RuntimeException("Error saving dynamic fields", e);
 			}
