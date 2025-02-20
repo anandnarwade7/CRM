@@ -70,7 +70,7 @@ public class ImportLeadController {
 		try {
 			return service.assignLeadsToSaled();
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+			return ResponseEntity.badRequest().body("Unable to assign");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -83,7 +83,7 @@ public class ImportLeadController {
 		try {
 			return service.assignLeads(token, page, status);
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+			return ResponseEntity.badRequest().body("Unable to load data.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -108,7 +108,7 @@ public class ImportLeadController {
 		try {
 			return service.getLeadsBysalesId(token, userId, page);
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+			return ResponseEntity.badRequest().body("Unable to load data");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -121,7 +121,7 @@ public class ImportLeadController {
 		try {
 			return ResponseEntity.ok(service.addConversationLog(leadId, date, comment));
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+			return ResponseEntity.badRequest().body("Unable to add log.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -134,7 +134,7 @@ public class ImportLeadController {
 		try {
 			return ResponseEntity.ok(service.addDynamicField(leadId, key, value));
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+			return ResponseEntity.badRequest().body("Unable to add fields.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -148,21 +148,33 @@ public class ImportLeadController {
 		try {
 			return ResponseEntity.ok(service.addConversationLogAndDynamicField(leadId, status, comment, key, value));
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+			return ResponseEntity.badRequest().body("Unable to process the request.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
+	@PutMapping("/updateStatus")
 	public ResponseEntity<?> updateLeadsToComplete(@PathVariable long leadId, @RequestParam String status) {
 		try {
 			return service.updateLeadsToComplete(leadId, status);
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+			return ResponseEntity.badRequest().body("Unable to process request.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@GetMapping("/getLeadsCount")
+	public ResponseEntity<?> getUsersCountByRole(@CookieValue(value = "token", required = true) String token,
+			@RequestParam(value = "userId", required = false) Long userId) {
+		try {
+			return service.getTotalCountsOfLeads(token, userId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
 	}
 }

@@ -4,7 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import com.crm.user.Status;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -242,63 +247,63 @@ public class ImportLead {
 		this.dynamicFields = dynamicFields;
 	}
 
-//	@SuppressWarnings("unchecked")
-//	public List<Map<String, String>> getConversationLogs() {
-//		if (jsonData != null) {
-//			ObjectMapper objectMapper = new ObjectMapper();
-//			try {
-//				conversationLogs = objectMapper.readValue(jsonData, List.class);
-//			} catch (JsonProcessingException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//		return conversationLogs;
-//	}
-//
-//	public void addConversationLog(String date, String comment) {
-//		Map<String, String> logEntry = new HashMap<>();
-////		logEntry.put("date", date);
-//		logEntry.put("comment", comment);
-//
-//		List<Map<String, String>> logs = getConversationLogs();
-//		logs.add(logEntry);
-//
-//		ObjectMapper objectMapper = new ObjectMapper();
-//		try {
-//			this.jsonData = objectMapper.writeValueAsString(logs);
-//		} catch (JsonProcessingException e) {
-//			e.printStackTrace();
-//		}
-//	}
-//
-//	private static final ObjectMapper objectMapper = new ObjectMapper();
-//
-//	public List<Map<String, Object>> getDynamicFields() {
-//		if (this.dynamicFieldsJson == null || this.dynamicFieldsJson.isEmpty()) {
-//			return new ArrayList<>();
-//		}
-//		try {
-//			return objectMapper.readValue(this.dynamicFieldsJson, new TypeReference<List<Map<String, Object>>>() {
-//			});
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			return new ArrayList<>();
-//		}
-//	}
-//
-//	public void addDynamicField(String key, Object value) {
-//		List<Map<String, Object>> fields = getDynamicFields();
-//		Map<String, Object> fieldEntry = new HashMap<>();
-//		fieldEntry.put(key, value);
-//		fields.add(fieldEntry);
-//
-//		ObjectMapper objectMapper = new ObjectMapper();
-//		try {
-//			this.dynamicFieldsJson = objectMapper.writeValueAsString(fields);
-//		} catch (JsonProcessingException e) {
-//			e.printStackTrace();
-//		}
-//	}
+	@SuppressWarnings("unchecked")
+	public List<Map<String, String>> getConversationLogs() {
+		if (jsonData != null) {
+			ObjectMapper objectMapper = new ObjectMapper();
+			try {
+				conversationLogs = objectMapper.readValue(jsonData, List.class);
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+		}
+		return conversationLogs;
+	}
+
+	public void addConversationLog(String date, String comment) {
+		Map<String, String> logEntry = new HashMap<>();
+//		logEntry.put("date", date);
+		logEntry.put("comment", comment);
+
+		List<Map<String, String>> logs = getConversationLogs();
+		logs.add(logEntry);
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			this.jsonData = objectMapper.writeValueAsString(logs);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static final ObjectMapper objectMapper = new ObjectMapper();
+
+	public List<Map<String, Object>> getDynamicFields() {
+		if (this.dynamicFieldsJson == null || this.dynamicFieldsJson.isEmpty()) {
+			return new ArrayList<>();
+		}
+		try {
+			return objectMapper.readValue(this.dynamicFieldsJson, new TypeReference<List<Map<String, Object>>>() {
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ArrayList<>();
+		}
+	}
+
+	public void addDynamicField(String key, Object value) {
+		List<Map<String, Object>> fields = getDynamicFields();
+		Map<String, Object> fieldEntry = new HashMap<>();
+		fieldEntry.put(key, value);
+		fields.add(fieldEntry);
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			this.dynamicFieldsJson = objectMapper.writeValueAsString(fields);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+	}
 
 	@Override
 	public String toString() {

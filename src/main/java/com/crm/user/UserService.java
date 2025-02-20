@@ -1,10 +1,12 @@
 package com.crm.user;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,11 +15,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CookieValue;
+
 import com.crm.Exception.Error;
+import com.crm.importLead.ImportLeadRepository;
 import com.crm.security.JwtUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,6 +32,9 @@ public class UserService {
 
 	@Autowired
 	private UserRepository repository;
+
+	@Autowired
+	private ImportLeadRepository leadRepository;
 
 	@Autowired
 	private JwtUtil jwtUtil;
@@ -527,4 +535,31 @@ public class UserService {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
 		}
 	}
+
+	public ResponseEntity<?> getUsersCountByRole(String token) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String adminRole = jwtUtil.extractRole(token);
+			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			List<User> sales = repository.findByRole("SALES");
+			List<User> crm = repository.findByRole("CRM");
+			long leads = leadRepository.count();
+			return ResponseEntity.ok(Map.of("sales", sales.size(), "crm", crm.size(), "leads", leads));
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
+		}
+	}
+
 }

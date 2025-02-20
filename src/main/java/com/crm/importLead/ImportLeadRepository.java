@@ -26,4 +26,10 @@ public interface ImportLeadRepository extends JpaRepository<ImportLead, Long> {
 	@Query("SELECT l FROM ImportLead l WHERE l.assignedTo = :id ORDER BY l.importedOn DESC")
 	Page<ImportLead> findByAssignedToOrderByImportedOnDesc(@Param("id") long id, Pageable pageable);
 
+	@Query("SELECT COUNT(l.id) FROM ImportLead l WHERE l.assignedTo = :userId")
+	long countByAssignedTo(@Param("userId") Long userId);
+
+	@Query("SELECT COUNT(l.id) FROM ImportLead l WHERE l.assignedTo = :userId AND l.status <> :status")
+	long countLeadsByUserIdAndStatusNotAssigned(@Param("userId") Long userId, @Param("status") Status status);
+
 }

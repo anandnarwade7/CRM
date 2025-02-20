@@ -164,4 +164,14 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
 		}
 	}
+	
+	@GetMapping("/getUsersCountByRole")
+	public ResponseEntity<?> getUsersCountByRole(@CookieValue(value = "token", required = true) String token) {
+		try {
+			return service.getUsersCountByRole(token);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
+		}
+	}
+	
 }
