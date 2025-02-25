@@ -736,7 +736,7 @@ public class ImportLeadService {
 	}
 
 	@Transactional
-	public ImportLead addConversationLogAndDynamicField(Long leadId, String status, String comment, List<String> key,
+	public ImportLead addConversationLogAndDynamicField(Long leadId, Status status, String comment, List<String> key,
 			List<Object> value) {
 
 		ImportLead lead = repository.findById(leadId)
@@ -776,34 +776,21 @@ public class ImportLeadService {
 		}
 
 		try {
-			if ("COLD".equalsIgnoreCase(status)) {
-				lead.setStatus(Status.COLD);
-			} else if ("WARM".equalsIgnoreCase(status)) {
-				lead.setStatus(Status.WARM);
-			} else if ("HOT".equalsIgnoreCase(status)) {
-				lead.setStatus(Status.HOT);
-			}
-			lead.setLeadStatus(status);
+			lead.setStatus(status);
 			return repository.save(lead);
 		} catch (Exception e) {
 			throw new RuntimeException("Error saving lead data", e);
 		}
 	}
 
-	public ResponseEntity<?> updateLeadsToComplete(long leadId, String status) {
+	public ResponseEntity<?> updateLeadsToComplete(long leadId, Status status) {
 		try {
 			Optional<ImportLead> byId = repository.findById(leadId);
 			if (!byId.isPresent()) {
 				throw new UserServiceException(401, "User not exists");
 			}
 			ImportLead importLead = byId.get();
-			if ("complete".equalsIgnoreCase(status)) {
-				importLead.setStatus(Status.COMPLETED);
-			} else if ("reject".equalsIgnoreCase(status)) {
-				importLead.setStatus(Status.REJECTED);
-			} else {
-				throw new UserServiceException(401, "envalid response");
-			}
+			importLead.setStatus(status);
 			return ResponseEntity.ok(importLead);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("lead not found: " + e.getMessage());
@@ -845,8 +832,9 @@ public class ImportLeadService {
 			long assignedLeads = repository.countByAssignedTo(userId);
 			long convertedLeads = repository.countLeadsByUserIdAndStatusNotAssigned(userId, Status.ASSIGNED);
 
-			Map<String, Long> result = Map.of("Total leads ", assignedLeads, "Converted leads", convertedLeads);
-			return ResponseEntity.ok(result);
+			Map<String, Long> response = Map.of("totalLeads", assignedLeads, "convertedLeads", convertedLeads);
+
+			return ResponseEntity.ok(response);
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details: " + e.getMessage());
 		}

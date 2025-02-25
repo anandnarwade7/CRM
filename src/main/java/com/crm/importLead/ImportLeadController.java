@@ -1,7 +1,6 @@
 package com.crm.importLead;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.Exception.Error;
+import com.crm.user.Status;
 import com.crm.user.UserServiceException;
 
 @RestController
@@ -142,7 +141,7 @@ public class ImportLeadController {
 	}
 
 	@PostMapping("/updateFields/{leadId}")
-	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) String status,
+	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) Status status,
 			@RequestParam(required = false) String comment, @RequestParam(required = false) List<String> key,
 			@RequestParam(required = false) List<Object> value) {
 		try {
@@ -156,7 +155,7 @@ public class ImportLeadController {
 	}
 
 	@PutMapping("/updateStatus")
-	public ResponseEntity<?> updateLeadsToComplete(@PathVariable long leadId, @RequestParam String status) {
+	public ResponseEntity<?> updateLeadsToComplete(@PathVariable long leadId, @RequestParam Status status) {
 		try {
 			return service.updateLeadsToComplete(leadId, status);
 		} catch (UserServiceException e) {
