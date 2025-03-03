@@ -17,7 +17,8 @@ import com.crm.Exception.Error;
 import com.crm.user.UserServiceException;
 
 @RestController
-@CrossOrigin
+@CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
+		("http://localhost:5174"),("http://139.84.136.208 ")})
 @RequestMapping("/api/chat")
 public class ChatController {
 

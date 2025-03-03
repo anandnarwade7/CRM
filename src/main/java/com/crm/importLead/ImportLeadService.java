@@ -1,5 +1,7 @@
 package com.crm.importLead;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -24,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.crm.Exception.Error;
+import com.crm.leads.LeadService;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
@@ -51,7 +54,12 @@ public class ImportLeadService {
 	private JwtUtil jwtUtil;
 
 	@Autowired
+	private LeadService leadService;
+
+	@Autowired
 	private NotificationsRepository notificationsRepository;
+
+//	private final String excelFilePath = "src/main/resources/Leads_Import_Tmplate.xlsx";
 
 	private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -568,7 +576,7 @@ public class ImportLeadService {
 		}
 	}
 
-	public ResponseEntity<?> assignLeads(String token, int page, String status) {
+	public ResponseEntity<?> assignLeads(String token, int page, Status status) {
 		try {
 			if (token == null) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
@@ -588,11 +596,7 @@ public class ImportLeadService {
 
 			Pageable pageable = PageRequest.of(page - 1, 10);
 			Page<ImportLead> unassignedLeads = null;
-			if (status.equalsIgnoreCase("assigned")) {
-				unassignedLeads = repository.findByStatusOrderByImportedOnDesc(Status.ASSIGNED, pageable);
-			} else if (status.equalsIgnoreCase("completed")) {
-				unassignedLeads = repository.findByStatusOrderByImportedOnDesc(Status.COMPLETED, pageable);
-			}
+			unassignedLeads = repository.findByStatusOrderByImportedOnDesc(status, pageable);
 
 			if (unassignedLeads.isEmpty()) {
 				return ResponseEntity.ok("No leads found");
@@ -791,6 +795,7 @@ public class ImportLeadService {
 			}
 			ImportLead importLead = byId.get();
 			importLead.setStatus(status);
+
 			return ResponseEntity.ok(importLead);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("lead not found: " + e.getMessage());
@@ -838,6 +843,16 @@ public class ImportLeadService {
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details: " + e.getMessage());
 		}
+	}
+
+	public byte[] downloadTemplateExcel() throws IOException {
+		ClassLoader classLoader = getClass().getClassLoader();
+		InputStream inputStream = classLoader.getResourceAsStream("Leads_Import_Tmplate.xlsx");
+
+		if (inputStream == null) {
+			throw new FileNotFoundException("Template file not found");
+		}
+		return inputStream.readAllBytes();
 	}
 
 }

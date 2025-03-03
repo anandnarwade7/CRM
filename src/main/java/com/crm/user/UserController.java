@@ -17,14 +17,14 @@ import com.crm.Exception.Error;
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
-@CrossOrigin(origins = { ("http://localhost:3000"), ("http://localhost:5173"), ("http://localhost:5174") })
+@CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
+		("http://localhost:5174"), ("http://139.84.136.208") })
 @RequestMapping("/api/user")
 public class UserController {
 
 	@Autowired
 	private UserService service;
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PostMapping("/registerAdmin")
 	public ResponseEntity<?> registerAdmin(@RequestBody String userJson) {
 		try {
@@ -35,7 +35,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PostMapping("/addUser/{id}")
 	public ResponseEntity<?> registerUser(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id, @RequestBody String userJson) {
@@ -47,7 +46,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PostMapping("/login")
 	public ResponseEntity<?> authenticateUser(@RequestBody String userJson, HttpServletResponse response) {
 		try {
@@ -59,7 +57,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getAdminById/{id}")
 	public ResponseEntity<?> getUser(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id) {
@@ -71,7 +68,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getCRMById/{id}")
 	public ResponseEntity<?> getCRM(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id) {
@@ -83,7 +79,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getSalesById/{id}")
 	public ResponseEntity<?> getSales(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id) {
@@ -95,7 +90,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PutMapping("/addDetails/{userId}")
 	public ResponseEntity<?> updateUserDetails(@CookieValue(value = "token", required = false) String token,
 			@PathVariable long userId, @RequestBody User user) {
@@ -107,7 +101,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PutMapping("/updateUser/{adminId}/{response}")
 	public ResponseEntity<?> updateUserAsBlockUnBlock(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long adminId, @PathVariable String response,
@@ -120,7 +113,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@PutMapping("/deleteUser/{adminId}/{userId}")
 	public ResponseEntity<?> deleteUser(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long adminId, @PathVariable long userId) {
@@ -132,7 +124,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getUsers")
 	public ResponseEntity<?> getUsersListByRole(@CookieValue(value = "token", required = true) String token,
 			@RequestParam int page, @RequestParam String role) {
@@ -144,7 +135,6 @@ public class UserController {
 		}
 	}
 
-	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getSales")
 	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "token", required = true) String token) {
 		try {
@@ -164,7 +154,7 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
 		}
 	}
-	
+
 	@GetMapping("/getUsersCountByRole")
 	public ResponseEntity<?> getUsersCountByRole(@CookieValue(value = "token", required = true) String token) {
 		try {
@@ -173,5 +163,5 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
 		}
 	}
-	
+
 }

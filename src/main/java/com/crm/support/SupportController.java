@@ -9,7 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@CrossOrigin(origins = { ("http://localhost:3000"), ("http://localhost:5173"), ("http://localhost:5174") })
+@CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
+		("http://localhost:5174"),("http://139.84.136.208 ")})
 @RequestMapping("/api/support")
 public class SupportController {
 

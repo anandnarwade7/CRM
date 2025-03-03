@@ -206,7 +206,7 @@ public class UserService {
 				cookie.setHttpOnly(true); // Helps mitigate XSS attacks
 				cookie.setSecure(false); // Ensures cookies are sent over HTTPS only (set to false in development
 											// environments without HTTPS)
-				cookie.setMaxAge(60 * 30); // Set the expiry time (30 minutes)
+				cookie.setMaxAge(60 * 60 * 6); // Set the expiry time (6 hrs)
 				cookie.setPath("/"); // Set the path to make the cookie available across the entire domain
 				response.addCookie(cookie);
 				String userObject = getUserObject1(byEmail, token);

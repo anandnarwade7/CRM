@@ -1,7 +1,10 @@
 package com.crm.importLead;
 
+import java.io.IOException;
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -14,17 +17,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
 import com.crm.Exception.Error;
 import com.crm.user.Status;
 import com.crm.user.UserServiceException;
 
 @RestController
-@CrossOrigin(origins = { ("http://localhost:3000"), ("http://localhost:5173"), ("http://localhost:5174") })
+@CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
+		("http://localhost:5174"),("http://139.84.136.208 ")})
 @RequestMapping("/api/import")
 public class ImportLeadController {
 
 	@Autowired
 	private ImportLeadService service;
+
 
 //	@PostMapping("/upload-template")
 //	public ResponseEntity<?> uploadTemplate(@RequestParam long userId, @RequestParam("file") MultipartFile file) {
@@ -78,7 +84,7 @@ public class ImportLeadController {
 
 	@GetMapping("/assigned")
 	public ResponseEntity<?> assignedLeads(@CookieValue(value = "token", required = true) String token,
-			@RequestParam int page, @RequestParam String status) {
+			@RequestParam int page, @RequestParam Status status) {
 		try {
 			return service.assignLeads(token, page, status);
 		} catch (UserServiceException e) {
@@ -174,6 +180,22 @@ public class ImportLeadController {
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
+		}
+	}
+
+	@GetMapping("/download-template")
+	public ResponseEntity<byte[]> downloadTemplate() {
+		try {
+			byte[] excelBytes = service.downloadTemplateExcel();
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(org.springframework.http.MediaType
+					.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+			headers.setContentDispositionFormData("attachment", "Template.xlsx");
+
+			return new ResponseEntity<>(excelBytes, headers, HttpStatus.OK);
+		} catch (IOException e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
 	}
 }
