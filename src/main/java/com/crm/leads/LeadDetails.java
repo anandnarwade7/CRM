@@ -1,10 +1,23 @@
 package com.crm.leads;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.crm.user.Status;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 
 @Entity
 public class LeadDetails {
@@ -15,16 +28,33 @@ public class LeadDetails {
 	private String leadName;
 	private String leadEmail;
 	private String leadmobile;
-	private String leadContactDate;
-//	private List<String> leadMassages;
-
+	private long date;
+	private long userId;
+	private long assignedTo;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", length = 100)
+	private Status status;
+	private String adName;
+	private String adSet;
+	private String campaign;
+	private String city;
+	private String callTime;
+	private String propertyRange;
+	private String crPerson;
 	@Column(name = "jsonData", nullable = true, length = 4000)
 	private String massagesJsonData;
+	@Column(name = "dynamicFields", nullable = true, length = 2000)
+	private String dynamicFieldsJson;
 
-	private long userId;
 	private String invoiceUrl;
 	private String action;
 	private long createOn;
+
+	@Transient
+	private List<Map<String, String>> conversationLogs = new ArrayList<>();
+
+	@Transient
+	private Map<String, Object> dynamicFields = new HashMap<>();
 
 	public LeadDetails() {
 	}
@@ -33,103 +63,267 @@ public class LeadDetails {
 		return id;
 	}
 
-	public void setId(long id) {
-		this.id = id;
-	}
-
 	public String getLeadName() {
 		return leadName;
-	}
-
-	public void setLeadName(String leadName) {
-		this.leadName = leadName;
 	}
 
 	public String getLeadEmail() {
 		return leadEmail;
 	}
 
-	public void setLeadEmail(String leadEmail) {
-		this.leadEmail = leadEmail;
-	}
-
 	public String getLeadmobile() {
 		return leadmobile;
 	}
 
-	public void setLeadmobile(String leadmobile) {
-		this.leadmobile = leadmobile;
-	}
-
-	public String getLeadContactDate() {
-		return leadContactDate;
-	}
-
-	public void setLeadContactDate(String leadContactDate) {
-		this.leadContactDate = leadContactDate;
-	}
-
-	public String getMassagesJsonData() {
-		return massagesJsonData;
-	}
-
-	public void setMassagesJsonData(String massagesJsonData) {
-		this.massagesJsonData = massagesJsonData;
+	public long getDate() {
+		return date;
 	}
 
 	public long getUserId() {
 		return userId;
 	}
 
-	public void setUserId(long userId) {
-		this.userId = userId;
+	public long getAssignedTo() {
+		return assignedTo;
+	}
+
+	public Status getStatus() {
+		return status;
+	}
+
+	public String getAdName() {
+		return adName;
+	}
+
+	public String getAdSet() {
+		return adSet;
+	}
+
+	public String getCampaign() {
+		return campaign;
+	}
+
+	public String getCity() {
+		return city;
+	}
+
+	public String getCallTime() {
+		return callTime;
+	}
+
+	public String getPropertyRange() {
+		return propertyRange;
+	}
+
+	public String getCrPerson() {
+		return crPerson;
 	}
 
 	public String getInvoiceUrl() {
 		return invoiceUrl;
 	}
 
-	public void setInvoiceUrl(String invoiceUrl) {
-		this.invoiceUrl = invoiceUrl;
-	}
-
 	public String getAction() {
 		return action;
-	}
-
-	public void setAction(String action) {
-		this.action = action;
 	}
 
 	public long getCreateOn() {
 		return createOn;
 	}
 
+	public void setId(long id) {
+		this.id = id;
+	}
+
+	public void setLeadName(String leadName) {
+		this.leadName = leadName;
+	}
+
+	public void setLeadEmail(String leadEmail) {
+		this.leadEmail = leadEmail;
+	}
+
+	public void setLeadmobile(String leadmobile) {
+		this.leadmobile = leadmobile;
+	}
+
+	public void setDate(long date) {
+		this.date = date;
+	}
+
+	public void setUserId(long userId) {
+		this.userId = userId;
+	}
+
+	public void setAssignedTo(long assignedTo) {
+		this.assignedTo = assignedTo;
+	}
+
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	public void setAdName(String adName) {
+		this.adName = adName;
+	}
+
+	public void setAdSet(String adSet) {
+		this.adSet = adSet;
+	}
+
+	public void setCampaign(String campaign) {
+		this.campaign = campaign;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	public void setCallTime(String callTime) {
+		this.callTime = callTime;
+	}
+
+	public void setPropertyRange(String propertyRange) {
+		this.propertyRange = propertyRange;
+	}
+
+	public void setCrPerson(String crPerson) {
+		this.crPerson = crPerson;
+	}
+
+	public void setInvoiceUrl(String invoiceUrl) {
+		this.invoiceUrl = invoiceUrl;
+	}
+
+	public void setAction(String action) {
+		this.action = action;
+	}
+
 	public void setCreateOn(long createOn) {
 		this.createOn = createOn;
 	}
 
-	public LeadDetails(long id, String leadName, String leadEmail, String leadmobile, String leadContactDate,
-			String massagesJsonData, long userId, String invoiceUrl, String action, long createOn) {
+	public void setConversationLogs(List<Map<String, String>> conversationLogs) {
+		this.conversationLogs = conversationLogs;
+	}
+
+	public void setDynamicFields(Map<String, Object> dynamicFields) {
+		this.dynamicFields = dynamicFields;
+	}
+
+	public String getMassagesJsonData() {
+		return massagesJsonData;
+	}
+
+	public String getDynamicFieldsJson() {
+		return dynamicFieldsJson;
+	}
+
+	public void setMassagesJsonData(String massagesJsonData) {
+		this.massagesJsonData = massagesJsonData;
+	}
+
+	public void setDynamicFieldsJson(String dynamicFieldsJson) {
+		this.dynamicFieldsJson = dynamicFieldsJson;
+	}
+
+	@SuppressWarnings("unchecked")
+	public List<Map<String, String>> getConversationLogs() {
+		if (massagesJsonData != null) {
+			ObjectMapper objectMapper = new ObjectMapper();
+			try {
+				conversationLogs = objectMapper.readValue(massagesJsonData, List.class);
+			} catch (JsonProcessingException e) {
+				e.printStackTrace();
+			}
+		}
+		return conversationLogs;
+	}
+
+	public void addConversationLog(String date, String comment) {
+		Map<String, String> logEntry = new HashMap<>();
+//		logEntry.put("date", date);
+		logEntry.put("comment", comment);
+
+		List<Map<String, String>> logs = getConversationLogs();
+		logs.add(logEntry);
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			this.massagesJsonData = objectMapper.writeValueAsString(logs);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static final ObjectMapper objectMapper = new ObjectMapper();
+
+	public List<Map<String, Object>> getDynamicFields() {
+		if (this.dynamicFieldsJson == null || this.dynamicFieldsJson.isEmpty()) {
+			return new ArrayList<>();
+		}
+		try {
+			return objectMapper.readValue(this.dynamicFieldsJson, new TypeReference<List<Map<String, Object>>>() {
+			});
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ArrayList<>();
+		}
+	}
+
+	public void addDynamicField(String key, Object value) {
+		List<Map<String, Object>> fields = getDynamicFields();
+		Map<String, Object> fieldEntry = new HashMap<>();
+		fieldEntry.put(key, value);
+		fields.add(fieldEntry);
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			this.dynamicFieldsJson = objectMapper.writeValueAsString(fields);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public LeadDetails(long id, String leadName, String leadEmail, String leadmobile, long date, long userId,
+			long assignedTo, Status status, String adName, String adSet, String campaign, String city, String callTime,
+			String propertyRange, String crPerson, String massagesJsonData, String dynamicFieldsJson, String invoiceUrl,
+			String action, long createOn, List<Map<String, String>> conversationLogs,
+			Map<String, Object> dynamicFields) {
 		super();
 		this.id = id;
 		this.leadName = leadName;
 		this.leadEmail = leadEmail;
 		this.leadmobile = leadmobile;
-		this.leadContactDate = leadContactDate;
-		this.massagesJsonData = massagesJsonData;
+		this.date = date;
 		this.userId = userId;
+		this.assignedTo = assignedTo;
+		this.status = status;
+		this.adName = adName;
+		this.adSet = adSet;
+		this.campaign = campaign;
+		this.city = city;
+		this.callTime = callTime;
+		this.propertyRange = propertyRange;
+		this.crPerson = crPerson;
+		this.massagesJsonData = massagesJsonData;
+		this.dynamicFieldsJson = dynamicFieldsJson;
 		this.invoiceUrl = invoiceUrl;
 		this.action = action;
 		this.createOn = createOn;
+		this.conversationLogs = conversationLogs;
+		this.dynamicFields = dynamicFields;
 	}
 
 	@Override
 	public String toString() {
 		return "LeadDetails [id=" + id + ", leadName=" + leadName + ", leadEmail=" + leadEmail + ", leadmobile="
-				+ leadmobile + ", leadContactDate=" + leadContactDate + ", massagesJsonData=" + massagesJsonData
-				+ ", userId=" + userId + ", invoiceUrl=" + invoiceUrl + ", action=" + action + ", createOn=" + createOn
-				+ "]";
+				+ leadmobile + ", date=" + date + ", userId=" + userId + ", assignedTo=" + assignedTo + ", status="
+				+ status + ", adName=" + adName + ", adSet=" + adSet + ", campaign=" + campaign + ", city=" + city
+				+ ", callTime=" + callTime + ", propertyRange=" + propertyRange + ", crPerson=" + crPerson
+				+ ", massagesJsonData=" + massagesJsonData + ", dynamicFieldsJson=" + dynamicFieldsJson
+				+ ", invoiceUrl=" + invoiceUrl + ", action=" + action + ", createOn=" + createOn + ", conversationLogs="
+				+ conversationLogs + ", dynamicFields=" + dynamicFields + "]";
 	}
 
 }

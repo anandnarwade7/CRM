@@ -1,9 +1,11 @@
 package com.crm.importLead;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,20 +19,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.Exception.Error;
 import com.crm.user.Status;
 import com.crm.user.UserServiceException;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"),("http://139.84.136.208 ")})
+		("http://localhost:5174"), ("http://139.84.136.208 ") })
 @RequestMapping("/api/import")
 public class ImportLeadController {
 
 	@Autowired
 	private ImportLeadService service;
-
 
 //	@PostMapping("/upload-template")
 //	public ResponseEntity<?> uploadTemplate(@RequestParam long userId, @RequestParam("file") MultipartFile file) {
@@ -198,4 +198,25 @@ public class ImportLeadController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
 		}
 	}
+
+	@GetMapping("/export")
+	public ResponseEntity<?> exportLeadToExcel() {
+		File leadFile = service.getConvertedLeads();
+		try {
+				HttpHeaders headers = new HttpHeaders();
+				headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Leads_Data.xlsx");
+				headers.add(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+//				headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+fileName);
+//				headers.add(HttpHeaders.CONTENT_TYPE, "text/csv");
+
+				InputStreamResource resource = new InputStreamResource(new FileInputStream(leadFile));
+				return ResponseEntity.ok().headers(headers).contentLength(leadFile.length()).body(resource);
+
+			} catch (IOException e) {
+				e.printStackTrace();
+				throw new RuntimeException("Error returning Excel file: " + e.getMessage());
+			} finally {
+				leadFile.delete();
+			}
+		}
 }

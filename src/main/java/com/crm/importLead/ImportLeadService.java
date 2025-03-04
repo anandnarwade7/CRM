@@ -1,22 +1,34 @@
 package com.crm.importLead;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,7 +38,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.crm.Exception.Error;
-import com.crm.leads.LeadService;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
@@ -53,8 +64,8 @@ public class ImportLeadService {
 	@Autowired
 	private JwtUtil jwtUtil;
 
-	@Autowired
-	private LeadService leadService;
+//	@Autowired
+//	private LeadService leadService;
 
 	@Autowired
 	private NotificationsRepository notificationsRepository;
@@ -589,14 +600,16 @@ public class ImportLeadService {
 			}
 
 			String adminRole = jwtUtil.extractRole(token);
-			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+			if (!"ADMIN".equalsIgnoreCase(adminRole) && !"SALES".equalsIgnoreCase(adminRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
 			Pageable pageable = PageRequest.of(page - 1, 10);
 			Page<ImportLead> unassignedLeads = null;
+			System.out.println("Status comming :: " + status);
 			unassignedLeads = repository.findByStatusOrderByImportedOnDesc(status, pageable);
+			System.out.println("Leads found :: " + unassignedLeads.getContent().size());
 
 			if (unassignedLeads.isEmpty()) {
 				return ResponseEntity.ok("No leads found");
@@ -619,7 +632,7 @@ public class ImportLeadService {
 
 			String role = jwtUtil.extractRole(token);
 
-			if (!"SALES".equalsIgnoreCase(role)) {
+			if (!"SALES".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
@@ -853,6 +866,83 @@ public class ImportLeadService {
 			throw new FileNotFoundException("Template file not found");
 		}
 		return inputStream.readAllBytes();
+	}
+
+	public File getConvertedLeads() {
+		try {
+			List<ImportLead> convertedLeads = repository.findByStatus(Status.CONVERTED);
+
+			return generateExcelForLeads(convertedLeads);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Error generating Excel file: " + e.getMessage());
+		}
+	}
+
+	public File generateExcelForLeads(List<ImportLead> leads) {
+		File tempFile = null;
+		try (XSSFWorkbook workbook = new XSSFWorkbook();
+				ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+			XSSFSheet sheet = workbook.createSheet("Leads Data");
+
+			List<String> baseColumns = Arrays.asList("name", "email", "mobile number", "status", "ad", "adset", "campaign",
+					"city", "sales person", "questions", "conversation logs");
+
+			XSSFRow headerRow = sheet.createRow(0);
+			XSSFFont headerFont = workbook.createFont();
+			headerFont.setBold(true);
+			XSSFCellStyle headerStyle = workbook.createCellStyle();
+			headerStyle.setFont(headerFont);
+
+			Map<String, Integer> columnIndexMap = new HashMap<>();
+			for (int i = 0; i < baseColumns.size(); i++) {
+				columnIndexMap.put(baseColumns.get(i), i);
+				XSSFCell cell = headerRow.createCell(i);
+				cell.setCellValue(baseColumns.get(i));
+				cell.setCellStyle(headerStyle);
+			}
+
+			int rowNum = 1;
+			for (ImportLead lead : leads) {
+				XSSFRow dataRow = sheet.createRow(rowNum++);
+
+				dataRow.createCell(columnIndexMap.get("name")).setCellValue(lead.getName());
+				dataRow.createCell(columnIndexMap.get("email")).setCellValue(lead.getEmail());
+				dataRow.createCell(columnIndexMap.get("mobile number")).setCellValue(lead.getMobileNumber());
+				dataRow.createCell(columnIndexMap.get("status")).setCellValue(lead.getStatus().toString());
+				dataRow.createCell(columnIndexMap.get("ad")).setCellValue(lead.getAdName());
+				dataRow.createCell(columnIndexMap.get("adset")).setCellValue(lead.getAdName());
+				dataRow.createCell(columnIndexMap.get("campaign")).setCellValue(lead.getCampaign());
+				dataRow.createCell(columnIndexMap.get("city")).setCellValue(lead.getCity());
+				dataRow.createCell(columnIndexMap.get("sales person")).setCellValue(lead.getSalesPerson());
+
+				String questionsData = lead.getDynamicFields() != null ? lead.getDynamicFields().stream()
+						.flatMap(map -> map.entrySet().stream().map(entry -> entry.getKey() + ": " + entry.getValue()))
+						.collect(Collectors.joining("\n")) : "";
+
+				dataRow.createCell(columnIndexMap.get("questions")).setCellValue(questionsData);
+
+				String conversationLogs = lead.getConversationLogs() != null ? lead.getConversationLogs().stream()
+						.map(log -> log.get("comment")).filter(Objects::nonNull).collect(Collectors.joining("\n")) : "";
+
+				XSSFCell conversationCell = dataRow.createCell(columnIndexMap.get("conversation logs"));
+				conversationCell.setCellValue(conversationLogs);
+				conversationCell.setCellStyle(headerStyle);
+			}
+
+			for (int i = 0; i < baseColumns.size(); i++) {
+				sheet.autoSizeColumn(i);
+			}
+
+			tempFile = File.createTempFile("LeadsReport", ".xlsx");
+			try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+				workbook.write(fos);
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("Error generating Excel file: " + e.getMessage(), e);
+		}
+		return tempFile;
 	}
 
 }
