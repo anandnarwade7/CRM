@@ -135,10 +135,10 @@ public class UserController {
 		}
 	}
 
-	@GetMapping("/getSales")
-	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "token", required = true) String token) {
+	@GetMapping("/getSales/{role}")
+	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "token", required = true) String token, @PathVariable String role) {
 		try {
-			return service.getSalesListByRole(token);
+			return service.getSalesListByRole(token, role);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));

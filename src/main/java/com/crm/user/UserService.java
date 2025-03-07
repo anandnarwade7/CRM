@@ -175,6 +175,7 @@ public class UserService {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode jsonNode = objectMapper.readTree(user);
+			String role = jsonNode.get("role").asText();
 			String email = jsonNode.get("email").asText();
 			String userPassword = jsonNode.get("password").asText();
 
@@ -185,12 +186,10 @@ public class UserService {
 			}
 
 			User byEmail = repository.findByEmail(email);
-
+			
 			System.out.println("User found :: " + byEmail);
-			if (byEmail == null) {
-
+			if (byEmail == null || !role.equals(byEmail.getRole())) {
 				throw new UserServiceException(409, "User profile not found");
-
 			}
 
 			System.out.println("commig pass :: " + userPassword);
@@ -471,7 +470,8 @@ public class UserService {
 
 	}
 
-	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "accessToken", required = false) String token) {
+	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "accessToken", required = false) String token,
+			String role) {
 		try {
 			if (token == null) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
@@ -488,10 +488,10 @@ public class UserService {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
-			List<User> users = repository.findByRoleOrderByCreatedOnDesc("SALES");
+			List<User> users = repository.findByRoleOrderByCreatedOnDesc(role);
 
 			if (users.isEmpty()) {
-				return ResponseEntity.ok("No users found for the role: " + "SALES");
+				return ResponseEntity.ok("No users found for the role: " + role);
 			}
 
 			List<UserDTO> userDTOs = users.stream().map(UserDTO::new).collect(Collectors.toList());

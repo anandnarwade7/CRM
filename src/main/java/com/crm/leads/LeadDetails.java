@@ -17,6 +17,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Transient;
 
 @Entity
@@ -225,6 +226,11 @@ public class LeadDetails {
 
 	public void setDynamicFieldsJson(String dynamicFieldsJson) {
 		this.dynamicFieldsJson = dynamicFieldsJson;
+	}
+	
+	@PrePersist
+	protected void prePersistFunction() {
+		this.createOn = System.currentTimeMillis();
 	}
 
 	@SuppressWarnings("unchecked")

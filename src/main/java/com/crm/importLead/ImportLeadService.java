@@ -408,6 +408,126 @@ public class ImportLeadService {
 //		}
 //	}
 
+	/// ???? working
+//	public ResponseEntity<?> readLeadsFromExcel(String token, long userId, List<Long> assignedTo, MultipartFile file) {
+//		int processedCount = 0;
+//		int skippedCount = 0;
+//
+//		if (jwtUtil.isTokenExpired(token)) {
+//			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+//					.body("Unauthorized: Your session has expired.");
+//		}
+//
+//		String role = jwtUtil.extractRole(token);
+//
+//		if (!"ADMIN".equalsIgnoreCase(role)) {
+//			return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+//					.body("Forbidden: You do not have the necessary permissions.");
+//		}
+//
+//		try (InputStream inputStream = file.getInputStream(); Workbook workbook = WorkbookFactory.create(inputStream)) {
+//			Sheet sheet = workbook.getSheetAt(0);
+//			Iterator<Row> rowIterator = sheet.iterator();
+//
+//			if (!rowIterator.hasNext()) {
+//				throw new UserServiceException(400, "Uploaded file does not contain any data.");
+//			}
+//
+//			rowIterator.next();
+//
+//			Map<String, Integer> columnMap = new HashMap<>();
+//			Row headerRow = sheet.getRow(0);
+//			for (Cell cell : headerRow) {
+//				columnMap.put(cell.getStringCellValue().trim().toLowerCase(), cell.getColumnIndex());
+//			}
+//
+//			List<ImportLead> leadsToSave = new ArrayList<>();
+//			List<Long> assignedToList = (assignedTo != null) ? new ArrayList<>(assignedTo) : new ArrayList<>();
+//			int assignedToSize = assignedToList.size();
+//			int index = 0;
+//
+//			Map<Long, Integer> assignedLeadCounts = new HashMap<>();
+//
+//			while (rowIterator.hasNext()) {
+//				Row row = rowIterator.next();
+//
+//				String email = getCellValueAsString(row, columnMap.get("email"));
+//				String mobileNumber = getCellValueAsString(row, columnMap.get("mobilenumber"));
+//				String name = getCellValueAsString(row, columnMap.get("name"));
+//				String propertyRange = getCellValueAsString(row, columnMap.get("propertyrange"));
+//				String callTime = getCellValueAsString(row, columnMap.get("calltime"));
+//				String ad = getCellValueAsString(row, columnMap.get("ad"));
+//				String adSet = getCellValueAsString(row, columnMap.get("adset"));
+//				String campaign = getCellValueAsString(row, columnMap.get("campaign"));
+//				String city = getCellValueAsString(row, columnMap.get("city"));
+//
+//				boolean isDuplicate = repository.existsByEmailAndAdNameAndAdSetAndCampaignAndCity(email, ad, adSet,
+//						campaign, city);
+//				if (isDuplicate) {
+//					System.out.println("Duplicate entry skipped: " + ad + ", " + adSet + ", " + campaign + ", " + city);
+//					skippedCount++;
+//					continue;
+//				}
+//
+//				ImportLead lead = new ImportLead();
+//				lead.setName(name);
+//				lead.setEmail(email);
+//				lead.setMobileNumber(mobileNumber);
+//				lead.setDate(System.currentTimeMillis());
+//				lead.setUserId(userId);
+//				lead.setStatus(Status.ASSIGNED);
+//				lead.setAdName(ad);
+//				lead.setAdSet(adSet);
+//				lead.setCampaign(campaign);
+//				lead.setCity(city);
+//				lead.setCallTime(callTime);
+//				lead.setPropertyRange(propertyRange);
+//
+//				if (!assignedToList.isEmpty()) {
+//
+//					lead.setAssignedTo(assignedToList.get(index % assignedToSize));
+//					System.out.println("User id :: " + assignedToList.get(index % assignedToSize));
+//					User salesById = userRepository.findSalesById(lead.getAssignedTo());
+//					System.out.println("User found :: " + salesById);
+//					lead.setSalesPerson(salesById.getName());
+//					index++;
+//
+//					assignedLeadCounts.put(assignedToList.get(index % assignedToSize),
+//							assignedLeadCounts.getOrDefault(assignedToList.get(index % assignedToSize), 0) + 1);
+//				}
+//
+//				leadsToSave.add(lead);
+//				processedCount++;
+//			}
+//
+//			repository.saveAll(leadsToSave);
+//			if (assignedToList.isEmpty()) {
+//				assignLeadsToSales();
+//			}
+//
+//			assignedLeadCounts.forEach((salesUserId, leadCount) -> {
+//				System.out.println("Attempting to send notification for Sales User ID: " + salesUserId
+//						+ " with lead count: " + leadCount);
+//
+//				User salesUser = userRepository.findById(salesUserId).orElse(null);
+//				if (salesUser != null) {
+//					String message = leadCount + " leads assigned to you.";
+//					sendNotification(salesUser, message);
+//				}
+//			});
+//
+//			return ResponseEntity
+//					.ok("File processed successfully. Processed: " + processedCount + ", Skipped: " + skippedCount);
+//
+//		} catch (UserServiceException e) {
+//			return ResponseEntity.status(e.getStatusCode()).body(
+//					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+//		}
+//	}
+
 	public ResponseEntity<?> readLeadsFromExcel(String token, long userId, List<Long> assignedTo, MultipartFile file) {
 		int processedCount = 0;
 		int skippedCount = 0;
@@ -432,7 +552,7 @@ public class ImportLeadService {
 				throw new UserServiceException(400, "Uploaded file does not contain any data.");
 			}
 
-			rowIterator.next();
+			rowIterator.next(); // Skip header row
 
 			Map<String, Integer> columnMap = new HashMap<>();
 			Row headerRow = sheet.getRow(0);
@@ -440,11 +560,13 @@ public class ImportLeadService {
 				columnMap.put(cell.getStringCellValue().trim().toLowerCase(), cell.getColumnIndex());
 			}
 
+			boolean hasAdColumns = columnMap.containsKey("ad") && columnMap.containsKey("adset")
+					&& columnMap.containsKey("campaign") && columnMap.containsKey("city");
+
 			List<ImportLead> leadsToSave = new ArrayList<>();
 			List<Long> assignedToList = (assignedTo != null) ? new ArrayList<>(assignedTo) : new ArrayList<>();
 			int assignedToSize = assignedToList.size();
 			int index = 0;
-
 			Map<Long, Integer> assignedLeadCounts = new HashMap<>();
 
 			while (rowIterator.hasNext()) {
@@ -455,13 +577,17 @@ public class ImportLeadService {
 				String name = getCellValueAsString(row, columnMap.get("name"));
 				String propertyRange = getCellValueAsString(row, columnMap.get("propertyrange"));
 				String callTime = getCellValueAsString(row, columnMap.get("calltime"));
-				String ad = getCellValueAsString(row, columnMap.get("ad"));
-				String adSet = getCellValueAsString(row, columnMap.get("adset"));
-				String campaign = getCellValueAsString(row, columnMap.get("campaign"));
 				String city = getCellValueAsString(row, columnMap.get("city"));
 
-				boolean isDuplicate = repository.existsByEmailAndAdNameAndAdSetAndCampaignAndCity(email, ad, adSet,
-						campaign, city);
+				String ad = hasAdColumns ? getCellValueAsString(row, columnMap.get("ad")) : null;
+				String adSet = hasAdColumns ? getCellValueAsString(row, columnMap.get("adset")) : null;
+				String campaign = hasAdColumns ? getCellValueAsString(row, columnMap.get("campaign")) : null;
+
+
+				boolean isDuplicate = hasAdColumns
+						? repository.existsByEmailAndAdNameAndAdSetAndCampaignAndCity(email, ad, adSet, campaign, city)
+						: repository.existsByEmailAndCity(email, city);
+
 				if (isDuplicate) {
 					System.out.println("Duplicate entry skipped: " + ad + ", " + adSet + ", " + campaign + ", " + city);
 					skippedCount++;
@@ -475,22 +601,30 @@ public class ImportLeadService {
 				lead.setDate(System.currentTimeMillis());
 				lead.setUserId(userId);
 				lead.setStatus(Status.ASSIGNED);
-				lead.setAdName(ad);
-				lead.setAdSet(adSet);
-				lead.setCampaign(campaign);
 				lead.setCity(city);
 				lead.setCallTime(callTime);
 				lead.setPropertyRange(propertyRange);
 
-				if (!assignedToList.isEmpty()) {
+				if (hasAdColumns) {
+					lead.setAdName(ad);
+					lead.setAdSet(adSet);
+					lead.setCampaign(campaign);
+				}
 
+				if (!assignedToList.isEmpty()) {
 					lead.setAssignedTo(assignedToList.get(index % assignedToSize));
 					System.out.println("User id :: " + assignedToList.get(index % assignedToSize));
 					User salesById = userRepository.findSalesById(lead.getAssignedTo());
-					System.out.println("User found :: " + salesById);
-					lead.setSalesPerson(salesById.getName());
-					index++;
 
+					if (salesById != null) {
+						System.out.println("User found :: " + salesById);
+						lead.setSalesPerson(salesById.getName());
+					} else {
+						System.out.println("No user found for ID: " + assignedToList.get(index % assignedToSize));
+						lead.setSalesPerson("Unknown");
+					}
+
+					index++;
 					assignedLeadCounts.put(assignedToList.get(index % assignedToSize),
 							assignedLeadCounts.getOrDefault(assignedToList.get(index % assignedToSize), 0) + 1);
 				}
@@ -501,7 +635,7 @@ public class ImportLeadService {
 
 			repository.saveAll(leadsToSave);
 			if (assignedToList.isEmpty()) {
-				assignLeadsToSaled();
+				assignLeadsToSales();
 			}
 
 			assignedLeadCounts.forEach((salesUserId, leadCount) -> {
@@ -548,7 +682,7 @@ public class ImportLeadService {
 		}
 	}
 
-	public ResponseEntity<?> assignLeadsToSaled() {
+	public ResponseEntity<?> assignLeadsToSales() {
 		try {
 			List<User> salesUsers = userRepository.findUsersByRole("SALES");
 			List<ImportLead> unassignedLeads = repository.findLeadsWhereAssignedToIsZero();
@@ -664,7 +798,7 @@ public class ImportLeadService {
 
 			String role = jwtUtil.extractRole(token);
 
-			if (!"SALES".equalsIgnoreCase(role)) {
+			if (!"SALES".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
@@ -886,8 +1020,8 @@ public class ImportLeadService {
 
 			XSSFSheet sheet = workbook.createSheet("Leads Data");
 
-			List<String> baseColumns = Arrays.asList("name", "email", "mobile number", "status", "ad", "adset", "campaign",
-					"city", "sales person", "questions", "conversation logs");
+			List<String> baseColumns = Arrays.asList("name", "email", "mobile number", "status", "ad", "adset",
+					"campaign", "city", "sales person", "questions", "conversation logs");
 
 			XSSFRow headerRow = sheet.createRow(0);
 			XSSFFont headerFont = workbook.createFont();

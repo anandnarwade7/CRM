@@ -71,9 +71,9 @@ public class ImportLeadController {
 	}
 
 	@PutMapping("/assignLeads")
-	public ResponseEntity<?> assignLeadsToSaled() {
+	public ResponseEntity<?> assignLeadsToSales() {
 		try {
-			return service.assignLeadsToSaled();
+			return service.assignLeadsToSales();
 		} catch (UserServiceException e) {
 			return ResponseEntity.badRequest().body("Unable to assign");
 		} catch (Exception e) {
