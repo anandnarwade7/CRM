@@ -28,7 +28,7 @@ public class UserController {
 	@PostMapping("/registerAdmin")
 	public ResponseEntity<?> registerAdmin(@RequestBody String userJson) {
 		try {
-			return service.registerUser(userJson);
+			return service.registerSuperAdmin(userJson);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to add data", System.currentTimeMillis()));
@@ -40,6 +40,17 @@ public class UserController {
 			@PathVariable long id, @RequestBody String userJson) {
 		try {
 			return service.addUser(token, id, userJson);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to add data", System.currentTimeMillis()));
+		}
+	}
+	
+	@PostMapping("/addadmin/{id}")
+	public ResponseEntity<?> registerAdmin(@CookieValue(value = "token", required = true) String token,
+			@PathVariable long id, @RequestBody String userJson) {
+		try {
+			return service.addAdmin(token, id, userJson);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to add data", System.currentTimeMillis()));

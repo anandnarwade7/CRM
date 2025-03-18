@@ -34,12 +34,36 @@ public class UserService {
 	private UserRepository repository;
 
 	@Autowired
+	private AdminsRepository adminRepository;
+
+	@Autowired
 	private ImportLeadRepository leadRepository;
 
 	@Autowired
 	private JwtUtil jwtUtil;
 
 	public String getUserObject(User user) {
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			ObjectNode responseJson = objectMapper.createObjectNode();
+			responseJson.put("id", user.getId());
+			responseJson.put("name", user.getName());
+//			responseJson.put("lastName", user.getLastName());
+			responseJson.put("email", user.getEmail());
+			responseJson.put("mobile", user.getMobile());
+			responseJson.put("role", user.getRole());
+			responseJson.put("profilePic", user.getProfilePic());
+			responseJson.put("action", user.getAction().toString());
+			responseJson.put("createdOn", user.getCreatedOn());
+			return responseJson.toString();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public String getUserObject(Admins user) {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			ObjectNode responseJson = objectMapper.createObjectNode();
@@ -81,6 +105,30 @@ public class UserService {
 		}
 		return null;
 	}
+	
+	public String getAdminObject1(Admins user, String token) {
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			ObjectNode responseJson = objectMapper.createObjectNode();
+			responseJson.put("id", user.getId());
+			responseJson.put("name", user.getName());
+//			responseJson.put("lastName", user.getLastName());
+			responseJson.put("email", user.getEmail());
+			responseJson.put("mobile", user.getMobile());
+			responseJson.put("role", user.getRole());
+			responseJson.put("profilePic", user.getProfilePic());
+			responseJson.put("action", user.getAction().toString());
+			responseJson.put("createdOn", user.getCreatedOn());
+			responseJson.put("propertyName", user.getPropertyName());
+			responseJson.put("token", token);
+			
+			return responseJson.toString();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
 	private boolean isValidEmail(String email) {
 		// Updated regex to support multi-part TLDs and valid email structures
@@ -90,7 +138,7 @@ public class UserService {
 		return matcher.matches();
 	}
 
-	public ResponseEntity<?> registerUser(String userJson) {
+	public ResponseEntity<?> registerSuperAdmin(String userJson) {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode jsonNode = objectMapper.readTree(userJson);
@@ -105,16 +153,16 @@ public class UserService {
 //			String role = jsonNode.get("role").asText();
 			String mobile = jsonNode.get("mobile").asText();
 
-			User user = new User();
+			Admins user = new Admins();
 			user.setName(name);
 //			user.setLastName(lastName);
 			user.setEmail(email);
 			user.setPassword(password);
 			user.setMobile(mobile);
 			user.setAction(Status.UNBLOCK);
-			user.setRole("ADMIN");
-			User save = repository.save(user);
-			String userObject = getUserObject1(save, "");
+			user.setRole("SUPER ADMIN");
+			Admins save = adminRepository.save(user);
+			String userObject = getAdminObject1(save, "");
 			return ResponseEntity.ok(userObject);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
@@ -124,6 +172,57 @@ public class UserService {
 		}
 	}
 
+	
+	public ResponseEntity<?> addAdmin(String token, long id, String userJson) {
+		try {
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String role = jwtUtil.extractRole(token);
+
+			if (!"SUPER ADMIN".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			ObjectMapper objectMapper = new ObjectMapper();
+			JsonNode jsonNode = objectMapper.readTree(userJson);
+			String email = jsonNode.get("email").asText();
+			if (repository.existsByEmail(email)) {
+				System.out.println("Check Point 1 ");
+				throw new UserServiceException(409, "Email already exist");
+			}
+			String password = jsonNode.get("password").asText();
+			String name = jsonNode.get("name").asText();
+//			String lastName = jsonNode.get("lastName").asText();
+//			String userRole = jsonNode.get("role").asText();
+			String mobile = jsonNode.get("mobile").asText();
+			String propertyName = jsonNode.get("propertyName").asText();
+
+			Admins admin = new Admins();
+			admin.setName(name);
+//			admin.setLastName(lastName);
+			admin.setEmail(email);
+			admin.setPassword(password);
+			admin.setMobile(mobile);
+			admin.setAction(Status.UNBLOCK);
+			admin.setPropertyName(propertyName);
+			admin.setUserId(id);
+			admin.setRole("ADMIN");
+			Admins save = adminRepository.save(admin);
+			String userObject = getUserObject(save);
+			return ResponseEntity.ok(userObject);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to register user", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			throw new UserServiceException(409, "Invalid Credentials ");
+		}
+	}
+	
 	public ResponseEntity<?> addUser(String token, long id, String userJson) {
 		try {
 
@@ -160,6 +259,7 @@ public class UserService {
 			user.setMobile(mobile);
 			user.setAction(Status.UNBLOCK);
 			user.setRole(userRole);
+			user.setUserId(id);
 			User save = repository.save(user);
 			String userObject = getUserObject(save);
 			return ResponseEntity.ok(userObject);
@@ -186,10 +286,10 @@ public class UserService {
 			}
 
 			User byEmail = repository.findByEmail(email);
-			
+
 			System.out.println("User found :: " + byEmail);
 			if (byEmail == null || !role.equals(byEmail.getRole())) {
-				System.out.println("In role check :: " + byEmail.getRole()  + role);
+				System.out.println("In role check :: " + byEmail.getRole() + role);
 				throw new UserServiceException(409, "User profile not found");
 			}
 

@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.transaction.Transactional;
+
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
 		("http://localhost:5174"), ("http://139.84.136.208 ") })
@@ -37,6 +39,7 @@ public class ProjectDetailsController {
 	}
 
 	@GetMapping("/get/{projectId}")
+	@Transactional
 	public ResponseEntity<?> getProjectDetailsById(@PathVariable long projectId) {
 		try {
 			return projectDetailsService.getProjectById(projectId);
