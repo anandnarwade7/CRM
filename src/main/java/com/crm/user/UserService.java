@@ -62,7 +62,7 @@ public class UserService {
 		}
 		return null;
 	}
-	
+
 	public String getUserObject(Admins user) {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
@@ -84,20 +84,36 @@ public class UserService {
 		return null;
 	}
 
-	public String getUserObject1(User user, String token) {
+	public String getUserObject1(String role, String email, String token) {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			ObjectNode responseJson = objectMapper.createObjectNode();
-			responseJson.put("id", user.getId());
-			responseJson.put("name", user.getName());
+
+			if ("SUPER ADMIN".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role)) {
+				Admins admin = adminRepository.findByEmail(email);
+				responseJson.put("id", admin.getId());
+				responseJson.put("name", admin.getName());
+//				responseJson.put("lastName", admin.getLastName());
+				responseJson.put("email", admin.getEmail());
+				responseJson.put("mobile", admin.getMobile());
+				responseJson.put("role", admin.getRole());
+				responseJson.put("profilePic", admin.getProfilePic());
+				responseJson.put("action", admin.getAction().toString());
+				responseJson.put("createdOn", admin.getCreatedOn());
+				responseJson.put("token", token);
+			} else {
+				User user = repository.findByEmail(email);
+				responseJson.put("id", user.getId());
+				responseJson.put("name", user.getName());
 //			responseJson.put("lastName", user.getLastName());
-			responseJson.put("email", user.getEmail());
-			responseJson.put("mobile", user.getMobile());
-			responseJson.put("role", user.getRole());
-			responseJson.put("profilePic", user.getProfilePic());
-			responseJson.put("action", user.getAction().toString());
-			responseJson.put("createdOn", user.getCreatedOn());
-			responseJson.put("token", token);
+				responseJson.put("email", user.getEmail());
+				responseJson.put("mobile", user.getMobile());
+				responseJson.put("role", user.getRole());
+				responseJson.put("profilePic", user.getProfilePic());
+				responseJson.put("action", user.getAction().toString());
+				responseJson.put("createdOn", user.getCreatedOn());
+				responseJson.put("token", token);
+			}
 			return responseJson.toString();
 
 		} catch (Exception e) {
@@ -105,7 +121,7 @@ public class UserService {
 		}
 		return null;
 	}
-	
+
 	public String getAdminObject1(Admins user, String token) {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
@@ -121,7 +137,7 @@ public class UserService {
 			responseJson.put("createdOn", user.getCreatedOn());
 			responseJson.put("propertyName", user.getPropertyName());
 			responseJson.put("token", token);
-			
+
 			return responseJson.toString();
 
 		} catch (Exception e) {
@@ -140,10 +156,11 @@ public class UserService {
 
 	public ResponseEntity<?> registerSuperAdmin(String userJson) {
 		try {
+			System.out.println("In super admin register");
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode jsonNode = objectMapper.readTree(userJson);
 			String email = jsonNode.get("email").asText();
-			if (repository.existsByEmail(email)) {
+			if (adminRepository.existsByEmail(email)) {
 				System.out.println("Check Point 1 ");
 				throw new UserServiceException(409, "Email already exist");
 			}
@@ -172,11 +189,12 @@ public class UserService {
 		}
 	}
 
-	
 	public ResponseEntity<?> addAdmin(String token, long id, String userJson) {
 		try {
+			System.out.println("In add admin service");
 
 			if (jwtUtil.isTokenExpired(token)) {
+				System.err.println("checking token"+ jwtUtil.isTokenExpired(token));
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: Your session has expired.");
 			}
@@ -184,15 +202,20 @@ public class UserService {
 			String role = jwtUtil.extractRole(token);
 
 			if (!"SUPER ADMIN".equalsIgnoreCase(role)) {
+				System.err.println("checking token role "+ !"SUPER ADMIN".equalsIgnoreCase(role));
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
+			System.out.println("Check point 1");
+
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode jsonNode = objectMapper.readTree(userJson);
 			String email = jsonNode.get("email").asText();
-			if (repository.existsByEmail(email)) {
-				System.out.println("Check Point 1 ");
+			System.out.println("Check point 2 email "+email);
+
+			if (adminRepository.existsByEmail(email)) {
+				System.err.println("Check Point 1 ");
 				throw new UserServiceException(409, "Email already exist");
 			}
 			String password = jsonNode.get("password").asText();
@@ -222,7 +245,7 @@ public class UserService {
 			throw new UserServiceException(409, "Invalid Credentials ");
 		}
 	}
-	
+
 	public ResponseEntity<?> addUser(String token, long id, String userJson) {
 		try {
 
@@ -271,6 +294,60 @@ public class UserService {
 		}
 	}
 
+//	public ResponseEntity<?> authenticateUser(String user, HttpServletResponse response) {
+//		try {
+//			ObjectMapper objectMapper = new ObjectMapper();
+//			JsonNode jsonNode = objectMapper.readTree(user);
+//			String role = jsonNode.get("role").asText();
+//			String email = jsonNode.get("email").asText();
+//			String userPassword = jsonNode.get("password").asText();
+//
+//			// Email validation
+//			if (!isValidEmail(email)) {
+//
+//				throw new UserServiceException(400, "Invalid email format");
+//			}
+//
+//			User byEmail = repository.findByEmail(email);
+//
+//			System.out.println("User found :: " + byEmail);
+//			if (byEmail == null || !role.equals(byEmail.getRole())) {
+//				System.out.println("In role check :: " + byEmail.getRole() + role);
+//				throw new UserServiceException(409, "User profile not found");
+//			}
+//
+//			System.out.println("commig pass :: " + userPassword);
+//			String dbPassword = byEmail.getPassword();
+//			System.out.println("dbPassword :: " + dbPassword);
+//
+//			if (dbPassword.equals(userPassword)) {
+//
+//				String token = jwtUtil.createToken(byEmail.getEmail(), byEmail.getRole());
+//				System.out.println("Token Created Successfully :: " + token);
+//
+//				Cookie cookie = new Cookie("token", token);
+//				cookie.setHttpOnly(true); // Helps mitigate XSS attacks
+//				cookie.setSecure(false); // Ensures cookies are sent over HTTPS only (set to false in development
+//											// environments without HTTPS)
+//				cookie.setMaxAge(60 * 60 * 6); // Set the expiry time (6 hrs)
+//				cookie.setPath("/"); // Set the path to make the cookie available across the entire domain
+//				response.addCookie(cookie);
+//				String userObject = getUserObject1(byEmail, token);
+//				return ResponseEntity.ok(userObject);
+//
+//			} else {
+//				throw new UserServiceException(409, "Invalid email and password");
+//			}
+//		} catch (UserServiceException e) {
+//
+//			return ResponseEntity.status(e.getStatusCode()).body(
+//					new Error(e.getStatusCode(), e.getMessage(), "Unable to login user", System.currentTimeMillis()));
+//
+//		} catch (Exception ex) {
+//			throw new UserServiceException(409, "Invalid Credentials");
+//		}
+//	}
+
 	public ResponseEntity<?> authenticateUser(String user, HttpServletResponse response) {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
@@ -279,50 +356,67 @@ public class UserService {
 			String email = jsonNode.get("email").asText();
 			String userPassword = jsonNode.get("password").asText();
 
-			// Email validation
 			if (!isValidEmail(email)) {
-
 				throw new UserServiceException(400, "Invalid email format");
 			}
 
-			User byEmail = repository.findByEmail(email);
+			User byEmail = null;
+			Admins byAdminEmail = null;
 
-			System.out.println("User found :: " + byEmail);
-			if (byEmail == null || !role.equals(byEmail.getRole())) {
-				System.out.println("In role check :: " + byEmail.getRole() + role);
-				throw new UserServiceException(409, "User profile not found");
-			}
+			if (role.equalsIgnoreCase("SALES") || role.equalsIgnoreCase("CRM") ) {
+				byEmail = repository.findByEmail(email);
+				if (byEmail == null) {
+					throw new UserServiceException(409, "User profile not found");
+				}
+				if (!role.equalsIgnoreCase(byEmail.getRole())) {
+					throw new UserServiceException(409, "User role mismatch");
+				}
+				System.out.println("User found: " + byEmail);
 
-			System.out.println("commig pass :: " + userPassword);
-			String dbPassword = byEmail.getPassword();
-			System.out.println("dbPassword :: " + dbPassword);
+				if (byEmail.getPassword().equals(userPassword)) {
+					return createResponse(response, byEmail.getEmail(), byEmail.getRole());
+				} else {
+					throw new UserServiceException(409, "Invalid email and password");
+				}
+			} else if (role.equalsIgnoreCase("SUPER ADMIN") || role.equalsIgnoreCase("ADMIN")) {
+				byAdminEmail = adminRepository.findByEmail(email);
+				if (byAdminEmail == null) {
+					throw new UserServiceException(409, "Admin profile not found");
+				}
+				if (!role.equalsIgnoreCase(byAdminEmail.getRole())) {
+					throw new UserServiceException(409, "Admin role mismatch");
+				}
+				System.out.println("Admin found: " + byAdminEmail);
 
-			if (dbPassword.equals(userPassword)) {
-
-				String token = jwtUtil.createToken(byEmail.getEmail(), byEmail.getRole());
-				System.out.println("Token Created Successfully :: " + token);
-
-				Cookie cookie = new Cookie("token", token);
-				cookie.setHttpOnly(true); // Helps mitigate XSS attacks
-				cookie.setSecure(false); // Ensures cookies are sent over HTTPS only (set to false in development
-											// environments without HTTPS)
-				cookie.setMaxAge(60 * 60 * 6); // Set the expiry time (6 hrs)
-				cookie.setPath("/"); // Set the path to make the cookie available across the entire domain
-				response.addCookie(cookie);
-				String userObject = getUserObject1(byEmail, token);
-				return ResponseEntity.ok(userObject);
-
+				if (byAdminEmail.getPassword().equals(userPassword)) {
+					return createResponse(response, byAdminEmail.getEmail(), byAdminEmail.getRole());
+				} else {
+					throw new UserServiceException(409, "Invalid email and password");
+				}
 			} else {
-				throw new UserServiceException(409, "Invalid email and password");
+				throw new UserServiceException(409, "Invalid role provided. Only USER or ADMIN are allowed.");
 			}
 		} catch (UserServiceException e) {
-
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to login user", System.currentTimeMillis()));
-
 		} catch (Exception ex) {
 			throw new UserServiceException(409, "Invalid Credentials");
 		}
+	}
+
+	private ResponseEntity<?> createResponse(HttpServletResponse response, String email, String role) {
+		String token = jwtUtil.createToken(email, role);
+		System.out.println("Token Created Successfully :: " + token);
+
+		Cookie cookie = new Cookie("token", token);
+		cookie.setHttpOnly(true);
+		cookie.setSecure(false);
+		cookie.setMaxAge(60 * 60 * 6);
+		cookie.setPath("/");
+		response.addCookie(cookie);
+
+		String userObjectStr = getUserObject1(role, email, token);
+		return ResponseEntity.ok(userObjectStr);
 	}
 
 	public ResponseEntity<?> getAdmin(String token, long id) {

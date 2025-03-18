@@ -18,7 +18,7 @@ public class JwtUtil {
 //	private final String SECRET_KEY = "xJUDiCOlbfONweKhAM0i0X9jrMXTEEZV27sm+fGkfEcEbzH5aUfz+dQNYVTANOkbXFffonAtVJrPUmfTGvpyeQ==";
 
 //	private static final long EXPIRATION_TIME = 1000 * 60 * 30; 
-	private static final long EXPIRATION_TIME = 1000 * 60 *60 *6; 
+	private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 6;
 	private JwtParser jwtParser;
 	private final String TOKEN_HEADER = "Authorization";
 	private final String TOKEN_PREFIX = "Bearer";
@@ -53,7 +53,11 @@ public class JwtUtil {
 	public String createToken(String value, String role) {
 		try {
 			Claims claims;
-			if ("ADMIN".equalsIgnoreCase(role)) {
+			if ("SUPER ADMIN".equalsIgnoreCase(role)) {
+				System.out.println("Admin role check");
+				claims = Jwts.claims().setSubject(value);
+				claims.put("role", "SUPER ADMIN");
+			} else if ("ADMIN".equalsIgnoreCase(role)) {
 				System.out.println("Admin role check");
 				claims = Jwts.claims().setSubject(value);
 				claims.put("role", "ADMIN");

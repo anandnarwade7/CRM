@@ -50,6 +50,7 @@ public class UserController {
 	public ResponseEntity<?> registerAdmin(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id, @RequestBody String userJson) {
 		try {
+			System.out.println("In add admin api");
 			return service.addAdmin(token, id, userJson);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(

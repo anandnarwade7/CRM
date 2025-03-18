@@ -9,6 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostPersist;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
@@ -149,6 +151,16 @@ public class Admins {
 
 	public void setPropertyName(String propertyName) {
 		this.propertyName = propertyName;
+	}
+
+	@PrePersist
+	protected void prePersistFunction() {
+		this.createdOn = System.currentTimeMillis();
+	}
+
+	@PostPersist
+	protected void postPersistFunction() {
+		this.updatedOn = System.currentTimeMillis();
 	}
 
 	public Admins(long id, String role, String name, String email, String mobile, Status action, String password,
