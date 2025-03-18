@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 
 @Entity
 public class ProjectDetails {
@@ -14,8 +15,6 @@ public class ProjectDetails {
 	private String propertyName;
 	private String address;
 	private String propertyArea;
-	private int totalTowers;
-	private int totalFloors;
 	private long userId;
 	private long createdOn;
 	private long updatedOn;
@@ -36,6 +35,7 @@ public class ProjectDetails {
 	}
 
 	public void setPropertyName(String propertyName) {
+
 		this.propertyName = propertyName;
 	}
 
@@ -53,22 +53,6 @@ public class ProjectDetails {
 
 	public void setPropertyArea(String propertyArea) {
 		this.propertyArea = propertyArea;
-	}
-
-	public int getTotalTowers() {
-		return totalTowers;
-	}
-
-	public void setTotalTowers(int totalTowers) {
-		this.totalTowers = totalTowers;
-	}
-
-	public int getTotalFloors() {
-		return totalFloors;
-	}
-
-	public void setTotalFloors(int totalFloors) {
-		this.totalFloors = totalFloors;
 	}
 
 	public long getUserId() {
@@ -95,25 +79,30 @@ public class ProjectDetails {
 		this.updatedOn = updatedOn;
 	}
 
-	@Override
-	public String toString() {
-		return "ProjectDetails [id=" + id + ", propertyName=" + propertyName + ", address=" + address
-				+ ", propertyArea=" + propertyArea + ", totalTowers=" + totalTowers + ", totalFloors=" + totalFloors
-				+ ", userId=" + userId + ", createdOn=" + createdOn + ", updatedOn=" + updatedOn + "]";
+	@PrePersist
+	protected void prePersistFunction() {
+		this.createdOn = System.currentTimeMillis();
+		this.updatedOn = System.currentTimeMillis();
+
 	}
 
-	public ProjectDetails(long id, String propertyName, String address, String propertyArea, int totalTowers,
-			int totalFloors, long userId, long createdOn, long updatedOn) {
+	public ProjectDetails(long id, String propertyName, String address, String propertyArea, long userId,
+			long createdOn, long updatedOn) {
 		super();
 		this.id = id;
 		this.propertyName = propertyName;
 		this.address = address;
 		this.propertyArea = propertyArea;
-		this.totalTowers = totalTowers;
-		this.totalFloors = totalFloors;
 		this.userId = userId;
 		this.createdOn = createdOn;
 		this.updatedOn = updatedOn;
+	}
+
+	@Override
+	public String toString() {
+		return "ProjectDetails [id=" + id + ", propertyName=" + propertyName + ", address=" + address
+				+ ", propertyArea=" + propertyArea + ", userId=" + userId + ", createdOn=" + createdOn + ", updatedOn="
+				+ updatedOn + "]";
 	}
 
 }

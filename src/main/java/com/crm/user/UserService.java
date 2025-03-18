@@ -189,6 +189,7 @@ public class UserService {
 			
 			System.out.println("User found :: " + byEmail);
 			if (byEmail == null || !role.equals(byEmail.getRole())) {
+				System.out.println("In role check :: " + byEmail.getRole()  + role);
 				throw new UserServiceException(409, "User profile not found");
 			}
 

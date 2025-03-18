@@ -583,7 +583,6 @@ public class ImportLeadService {
 				String adSet = hasAdColumns ? getCellValueAsString(row, columnMap.get("adset")) : null;
 				String campaign = hasAdColumns ? getCellValueAsString(row, columnMap.get("campaign")) : null;
 
-
 				boolean isDuplicate = hasAdColumns
 						? repository.existsByEmailAndAdNameAndAdSetAndCampaignAndCity(email, ad, adSet, campaign, city)
 						: repository.existsByEmailAndCity(email, city);
@@ -927,7 +926,9 @@ public class ImportLeadService {
 		}
 
 		try {
-			lead.setStatus(status);
+			if (status != null) {
+				lead.setStatus(status);
+			}
 			return repository.save(lead);
 		} catch (Exception e) {
 			throw new RuntimeException("Error saving lead data", e);

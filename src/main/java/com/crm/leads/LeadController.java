@@ -20,14 +20,14 @@ import com.crm.user.Status;
 import com.crm.user.UserServiceException;
 
 @Controller
-@CrossOrigin
+@CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
+		("http://localhost:5174"), ("http://139.84.136.208") })
 @RequestMapping("/api/clients")
 public class LeadController {
 
-	
 	@Autowired
 	private LeadService leadService;
-	
+
 	@PostMapping("/upload")
 	public ResponseEntity<?> uploadTemplate(@CookieValue(value = "token", required = true) String token,
 			@RequestParam long userId, @RequestParam(required = false) List<Long> assignedTo,
@@ -45,7 +45,7 @@ public class LeadController {
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	@GetMapping("/listbystatus")
 	public ResponseEntity<?> importdClients(@CookieValue(value = "token", required = true) String token,
 			@RequestParam int page, @RequestParam Status status) {
@@ -58,7 +58,7 @@ public class LeadController {
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getById/{id}")
 	public ResponseEntity<?> getLeadById(@CookieValue(value = "token", required = true) String token,
@@ -70,7 +70,7 @@ public class LeadController {
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
 	}
-	
+
 	@GetMapping("/clientsbycr")
 	public ResponseEntity<?> getClientsByCrmId(@CookieValue(value = "token", required = true) String token,
 			@RequestParam long userId, @RequestParam int page) {
@@ -83,7 +83,7 @@ public class LeadController {
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	
+
 	@PostMapping("/updateFields/{leadId}")
 	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) Status status,
 			@RequestParam(required = false) String comment, @RequestParam(required = false) List<String> key,

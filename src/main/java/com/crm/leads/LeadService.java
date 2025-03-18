@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,7 +27,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.crm.Exception.Error;
-import com.crm.importLead.ImportLead;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
@@ -318,29 +318,29 @@ public class LeadService {
 		}
 	}
 
-	private String parseConversationLogs(String msg) {
-	    if (msg == null || msg.trim().isEmpty()) {
-	        return "[]"; // Return empty JSON array if msg is null/empty
-	    }
-
-	    String[] logs = msg.split("\\r?\\n"); // Splitting messages by newline (\n or \r\n)
-	    List<Map<String, String>> conversationLogs = new ArrayList<>();
-
-	    for (String log : logs) {
-	        if (!log.trim().isEmpty()) { // Ignore empty lines
-	            Map<String, String> entry = new HashMap<>();
-	            entry.put("comment", log.trim());
-	            conversationLogs.add(entry);
-	        }
-	    }
-
-	    try {
-	        return new ObjectMapper().writeValueAsString(conversationLogs); // Convert list to JSON string
-	    } catch (JsonProcessingException e) {
-	        e.printStackTrace();
-	        return "[]"; // Return empty JSON if conversion fails
-	    }
-	}
+//	private String parseConversationLogs(String msg) {
+//	    if (msg == null || msg.trim().isEmpty()) {
+//	        return "[]"; // Return empty JSON array if msg is null/empty
+//	    }
+//
+//	    String[] logs = msg.split("\\r?\\n"); // Splitting messages by newline (\n or \r\n)
+//	    List<Map<String, String>> conversationLogs = new ArrayList<>();
+//
+//	    for (String log : logs) {
+//	        if (!log.trim().isEmpty()) { // Ignore empty lines
+//	            Map<String, String> entry = new HashMap<>();
+//	            entry.put("comment", log.trim());
+//	            conversationLogs.add(entry);
+//	        }
+//	    }
+//
+//	    try {
+//	        return new ObjectMapper().writeValueAsString(conversationLogs); // Convert list to JSON string
+//	    } catch (JsonProcessingException e) {
+//	        e.printStackTrace();
+//	        return "[]"; // Return empty JSON if conversion fails
+//	    }
+//	}
 
 	private Status getStatusValue(String status) {
 		if (status.equalsIgnoreCase("Converted")) {
@@ -465,7 +465,7 @@ public class LeadService {
 
 			String role = jwtUtil.extractRole(token);
 
-			if (!"SALES".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
+			if (!"CRM".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
@@ -487,7 +487,7 @@ public class LeadService {
 					.body("Internal Server Error: " + e.getMessage());
 		}
 	}
-	
+
 	public ResponseEntity<?> getClientsByCrmId(String token, long userId, int page) {
 		try {
 			if (jwtUtil.isTokenExpired(token)) {
@@ -519,23 +519,33 @@ public class LeadService {
 					.body("Internal Server Error: " + e.getMessage());
 		}
 	}
-	
+
 	@Transactional
-	public ResponseEntity<?> addConversationLogAndDynamicField(Long clientId, Status status, String comment, List<String> key,
-			List<Object> value) {
+	public ResponseEntity<?> addConversationLogAndDynamicField(Long clientId, Status status, String comment,
+			List<String> key, List<Object> value) {
 
 		LeadDetails client = repository.findById(clientId)
-				.orElseThrow(() -> new RuntimeException("Clients not found with ID: " +clientId));
+				.orElseThrow(() -> new RuntimeException("Clients not found with ID: " + clientId));
 
+		if (comment != null && !comment.trim().isEmpty()) {
+			List<Map<String, String>> logs = getConversationLogs(client);
+
+			if (logs == null || logs.isEmpty()) {
+				logs = new ArrayList<>();
+			}
+
+			String[] commentLines = comment.split("\\r?\\n");
 //		String formattedDate = new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date());
 
-		if (comment != null) {
-			List<Map<String, String>> logs = getConversationLogs(client);
-			Map<String, String> logEntry = new HashMap<>();
-//			logEntry.put("date", formattedDate);
-			logEntry.put("comment", comment);
+			for (String line : commentLines) {
+				if (!line.trim().isEmpty()) {
+					Map<String, String> logEntry = new HashMap<>();
+//					logEntry.put("date", formattedDate);
+					logEntry.put("comment", line);
+					logs.add(logEntry);
+				}
+			}
 
-			logs.add(logEntry);
 			try {
 				client.setMassagesJsonData(objectMapper.writeValueAsString(logs));
 			} catch (JsonProcessingException e) {
@@ -561,14 +571,53 @@ public class LeadService {
 		}
 
 		try {
-			client.setStatus(status);
-		 LeadDetails save = repository.save(client);
-		 return ResponseEntity.ok(save);
-		 } catch (Exception e) {
+			if (status != null) {
+				client.setStatus(status);
+			}
+			LeadDetails save = repository.save(client);
+			return ResponseEntity.ok(save);
+		} catch (Exception e) {
 			throw new RuntimeException("Error saving lead data", e);
 		}
 	}
-	
+
+//	public List<Map<String, String>> getConversationLogs(LeadDetails client) {
+//		if (client.getMassagesJsonData() == null || client.getMassagesJsonData().isEmpty()) {
+//			return new ArrayList<>();
+//		}
+//		try {
+//			return objectMapper.readValue(client.getMassagesJsonData(), new TypeReference<List<Map<String, String>>>() {
+//			});
+//		} catch (JsonProcessingException e) {
+//			return new ArrayList<>();
+//		}
+//	}
+
+	private String parseConversationLogs(String msg) {
+		if (msg == null || msg.trim().isEmpty()) {
+			return "[]";
+		}
+
+		String[] logs = msg.split("\\r?\\n");
+		List<Map<String, String>> conversationLogs = new ArrayList<>();
+
+		for (String log : logs) {
+			log = log.trim();
+			if (!log.isEmpty()) {
+				Map<String, String> entry = new HashMap<>();
+				entry.put("comment", log);
+				conversationLogs.add(entry);
+			}
+		}
+
+		try {
+			return new ObjectMapper().writeValueAsString(conversationLogs);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+			return "[]";
+		}
+	}
+
 	public List<Map<String, String>> getConversationLogs(LeadDetails client) {
 		if (client.getMassagesJsonData() == null || client.getMassagesJsonData().isEmpty()) {
 			return new ArrayList<>();
@@ -578,6 +627,36 @@ public class LeadService {
 			});
 		} catch (JsonProcessingException e) {
 			return new ArrayList<>();
+		}
+	}
+
+	public ResponseEntity<?> getTotalCountsOfLeads(String token, Long userId) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String role = jwtUtil.extractRole(token);
+
+			if (!"CRM".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			long assignedLeads = repository.countByAssignedTo(userId);
+			long convertedLeads = repository.countLeadsByUserIdAndStatusNotAssigned(userId, Status.ASSIGNED);
+
+			Map<String, Long> response = Map.of("totalLeads", assignedLeads, "convertedLeads", convertedLeads);
+
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details: " + e.getMessage());
 		}
 	}
 }
