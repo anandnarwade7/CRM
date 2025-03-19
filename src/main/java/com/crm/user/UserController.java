@@ -146,6 +146,17 @@ public class UserController {
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
 	}
+	
+	@GetMapping("/getamin")
+	public ResponseEntity<?> getAdminsList(@CookieValue(value = "token", required = true) String token,
+			@RequestParam int page, @RequestParam String role) {
+		try {
+			return service.getAdminsList(token, page, role);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
+		}
+	}
 
 	@GetMapping("/getSales/{role}")
 	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "token", required = true) String token, @PathVariable String role) {

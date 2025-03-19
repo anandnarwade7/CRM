@@ -115,4 +115,14 @@ public class UserDTO {
 		this.createdOn = user.getCreatedOn();
 	}
 
+	public UserDTO(Admins user) {
+		this.id = user.getId();
+		this.name = user.getName();
+		this.email = user.getEmail();
+		this.mobile = user.getMobile();
+		this.role = user.getRole();
+		this.profilePic = user.getProfilePic();
+		this.action = user.getAction().toString();
+		this.createdOn = user.getCreatedOn();
+	}
 }

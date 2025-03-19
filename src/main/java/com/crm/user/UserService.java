@@ -75,7 +75,10 @@ public class UserService {
 			responseJson.put("role", user.getRole());
 			responseJson.put("profilePic", user.getProfilePic());
 			responseJson.put("action", user.getAction().toString());
+			responseJson.put("startDate", user.getStartDate());
+			responseJson.put("endDate", user.getEndDate());
 			responseJson.put("createdOn", user.getCreatedOn());
+			responseJson.put("propertyName", user.getPropertyName());
 			return responseJson.toString();
 
 		} catch (Exception e) {
@@ -99,7 +102,11 @@ public class UserService {
 				responseJson.put("role", admin.getRole());
 				responseJson.put("profilePic", admin.getProfilePic());
 				responseJson.put("action", admin.getAction().toString());
+				responseJson.put("propertyName", admin.getPropertyName());
 				responseJson.put("createdOn", admin.getCreatedOn());
+				responseJson.put("startDate", admin.getStartDate());
+				responseJson.put("endDate", admin.getEndDate());
+
 				responseJson.put("token", token);
 			} else {
 				User user = repository.findByEmail(email);
@@ -194,7 +201,7 @@ public class UserService {
 			System.out.println("In add admin service");
 
 			if (jwtUtil.isTokenExpired(token)) {
-				System.err.println("checking token"+ jwtUtil.isTokenExpired(token));
+				System.err.println("checking token" + jwtUtil.isTokenExpired(token));
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: Your session has expired.");
 			}
@@ -202,7 +209,7 @@ public class UserService {
 			String role = jwtUtil.extractRole(token);
 
 			if (!"SUPER ADMIN".equalsIgnoreCase(role)) {
-				System.err.println("checking token role "+ !"SUPER ADMIN".equalsIgnoreCase(role));
+				System.err.println("checking token role " + !"SUPER ADMIN".equalsIgnoreCase(role));
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
@@ -212,7 +219,7 @@ public class UserService {
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode jsonNode = objectMapper.readTree(userJson);
 			String email = jsonNode.get("email").asText();
-			System.out.println("Check point 2 email "+email);
+			System.out.println("Check point 2 email " + email);
 
 			if (adminRepository.existsByEmail(email)) {
 				System.err.println("Check Point 1 ");
@@ -224,6 +231,8 @@ public class UserService {
 //			String userRole = jsonNode.get("role").asText();
 			String mobile = jsonNode.get("mobile").asText();
 			String propertyName = jsonNode.get("propertyName").asText();
+			long startDate = jsonNode.get("startDate").asLong();
+			long endDate = jsonNode.get("endDate").asLong();
 
 			Admins admin = new Admins();
 			admin.setName(name);
@@ -234,6 +243,8 @@ public class UserService {
 			admin.setAction(Status.UNBLOCK);
 			admin.setPropertyName(propertyName);
 			admin.setUserId(id);
+			admin.setStartDate(startDate);
+			admin.setEndDate(endDate);
 			admin.setRole("ADMIN");
 			Admins save = adminRepository.save(admin);
 			String userObject = getUserObject(save);
@@ -363,7 +374,7 @@ public class UserService {
 			User byEmail = null;
 			Admins byAdminEmail = null;
 
-			if (role.equalsIgnoreCase("SALES") || role.equalsIgnoreCase("CRM") ) {
+			if (role.equalsIgnoreCase("SALES") || role.equalsIgnoreCase("CRM")) {
 				byEmail = repository.findByEmail(email);
 				if (byEmail == null) {
 					throw new UserServiceException(409, "User profile not found");
@@ -428,18 +439,15 @@ public class UserService {
 
 			String role = jwtUtil.extractRole(token);
 
-			if (!"ADMIN".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !"SUPER ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			Optional<User> user = repository.findById(id);
-			if (user.isPresent()) {
-				String userObject = getUserObject(user.get());
-				return ResponseEntity.ok(userObject);
-			} else {
-				throw new UserServiceException(401, "User not exists");
-			}
+			Admins admin = adminRepository.findById(id)
+					.orElseThrow(() -> new UserServiceException(401, "User not exists"));
+			String userObject = getUserObject(admin);
+			return ResponseEntity.ok(userObject);
 		} catch (ExpiredJwtException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 					.body("Unauthorized: Your session has expired.");
@@ -626,6 +634,46 @@ public class UserService {
 		}
 	}
 
+	public ResponseEntity<?> getAdminsList(String token, int page, String role) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String adminRole = jwtUtil.extractRole(token);
+
+			if (!"ADMIN".equalsIgnoreCase(adminRole) && !"ADMIN".equalsIgnoreCase(adminRole)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			role = role.trim();
+			Pageable pageable = PageRequest.of(page - 1, 10);
+			Page<Admins> usersPage = adminRepository.findByRoleOrderByCreatedOnDesc("ADMIN", pageable);
+
+			if (usersPage.isEmpty()) {
+				return ResponseEntity.ok("No users found for the role: " + role);
+			}
+
+			List<UserDTO> userDTOs = usersPage.getContent().stream().map(UserDTO::new).collect(Collectors.toList());
+
+			return ResponseEntity.ok(userDTOs);
+
+		} catch (ExpiredJwtException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+					.body("Unauthorized: Your session has expired.");
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
+		}
+
+	}
+
 	public ResponseEntity<?> getUsersListByRole(String token, int page, String role) {
 		try {
 			if (token == null) {
@@ -639,13 +687,14 @@ public class UserService {
 			}
 
 			String adminRole = jwtUtil.extractRole(token);
-			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+			Admins admin = adminRepository.findByRole(adminRole);
+			if (!"ADMIN".equalsIgnoreCase(adminRole) && !"ADMIN".equalsIgnoreCase(adminRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 			role = role.trim();
 			Pageable pageable = PageRequest.of(page - 1, 10);
-			Page<User> usersPage = repository.findByRoleOrderByCreatedOnDesc(role, pageable);
+			Page<User> usersPage = repository.findByRoleAndUserIdOrderByCreatedOnDesc(role, admin.getId(), pageable);
 
 			if (usersPage.isEmpty()) {
 				return ResponseEntity.ok("No users found for the role: " + role);
@@ -715,11 +764,13 @@ public class UserService {
 			}
 
 			String adminRole = jwtUtil.extractRole(token);
+			Admins admin = adminRepository.findByRole(adminRole);
 			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
-			List<User> allByUserId = repository.findByRole(role);
+			List<User> allByUserId = repository.findByRoleWhereUserId(role, admin.getId());
+			System.out.println("List found and its size is : " + allByUserId.size());
 			int size = allByUserId.size();
 			int pages = (int) Math.ceil((double) size / 10);
 			if (pages == 0) {
@@ -744,14 +795,19 @@ public class UserService {
 			}
 
 			String adminRole = jwtUtil.extractRole(token);
-			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+			if (!"ADMIN".equalsIgnoreCase(adminRole) && !"ADMIN".equalsIgnoreCase(adminRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 			List<User> sales = repository.findByRole("SALES");
 			List<User> crm = repository.findByRole("CRM");
+			long adminsCountByRole = adminRepository.adminsCountByRole("ADMIN");
 			long leads = leadRepository.count();
-			return ResponseEntity.ok(Map.of("sales", sales.size(), "crm", crm.size(), "leads", leads));
+			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+				return ResponseEntity.ok(Map.of("sales", sales.size(), "crm", crm.size(), "leads", leads));
+			} else {
+				return ResponseEntity.ok(Map.of("amins", adminsCountByRole));
+			}
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
 		}

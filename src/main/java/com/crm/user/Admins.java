@@ -37,6 +37,8 @@ public class Admins {
 	private String profilePic;
 	private long userId;
 	private String propertyName;
+	private long startDate;
+	private long endDate;
 
 	public Admins() {
 	}
@@ -163,9 +165,25 @@ public class Admins {
 		this.updatedOn = System.currentTimeMillis();
 	}
 
+	public long getStartDate() {
+		return startDate;
+	}
+
+	public long getEndDate() {
+		return endDate;
+	}
+
+	public void setStartDate(long startDate) {
+		this.startDate = startDate;
+	}
+
+	public void setEndDate(long endDate) {
+		this.endDate = endDate;
+	}
+
 	public Admins(long id, String role, String name, String email, String mobile, Status action, String password,
 			String otp, LocalDateTime otpCreationTime, long createdOn, long updatedOn, String profilePic, long userId,
-			String propertyName) {
+			String propertyName, long startDate, long endDate) {
 		super();
 		this.id = id;
 		this.role = role;
@@ -181,6 +199,8 @@ public class Admins {
 		this.profilePic = profilePic;
 		this.userId = userId;
 		this.propertyName = propertyName;
+		this.startDate = startDate;
+		this.endDate = endDate;
 	}
 
 	@Override
@@ -188,7 +208,8 @@ public class Admins {
 		return "Admins [id=" + id + ", role=" + role + ", name=" + name + ", email=" + email + ", mobile=" + mobile
 				+ ", action=" + action + ", password=" + password + ", otp=" + otp + ", otpCreationTime="
 				+ otpCreationTime + ", createdOn=" + createdOn + ", updatedOn=" + updatedOn + ", profilePic="
-				+ profilePic + ", userId=" + userId + ", propertyName=" + propertyName + "]";
+				+ profilePic + ", userId=" + userId + ", propertyName=" + propertyName + ", startDate=" + startDate
+				+ ", endDate=" + endDate + "]";
 	}
 
 }
