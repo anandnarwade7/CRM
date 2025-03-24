@@ -29,4 +29,6 @@ public interface LeadRepository  extends JpaRepository<LeadDetails, Long>{
 	@Query("SELECT COUNT(l.id) FROM LeadDetails l WHERE l.assignedTo = :userId AND l.status <> :status")
 	long countLeadsByUserIdAndStatusNotAssigned(@Param("userId") Long userId, @Param("status") Status status);
 
+	long countLeadsByAssignedTo(long id);
+
 }

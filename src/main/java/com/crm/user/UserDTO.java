@@ -12,6 +12,9 @@ public class UserDTO {
 	private long createdOn;
 	private String action;
 	private String profilePic;
+	private String propertyName;
+	private long startDate;
+	private long endDate;
 
 	public UserDTO() {
 	}
@@ -85,6 +88,30 @@ public class UserDTO {
 		this.createdOn = System.currentTimeMillis();
 	}
 
+	public String getPropertyName() {
+		return propertyName;
+	}
+
+	public long getStartDate() {
+		return startDate;
+	}
+
+	public long getEndDate() {
+		return endDate;
+	}
+
+	public void setPropertyName(String propertyName) {
+		this.propertyName = propertyName;
+	}
+
+	public void setStartDate(long startDate) {
+		this.startDate = startDate;
+	}
+
+	public void setEndDate(long endDate) {
+		this.endDate = endDate;
+	}
+
 	public UserDTO(long id, String name, String email, String mobile, String role, long createdOn, String action,
 			String profilePic) {
 		super();
@@ -124,5 +151,9 @@ public class UserDTO {
 		this.profilePic = user.getProfilePic();
 		this.action = user.getAction().toString();
 		this.createdOn = user.getCreatedOn();
+		this.propertyName=user.getPropertyName();
+		this.startDate=user.getStartDate();
+		this.endDate=user.getEndDate();
+		
 	}
 }

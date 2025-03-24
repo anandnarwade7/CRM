@@ -65,10 +65,14 @@ public class JwtUtil {
 				System.out.println("User role check");
 				claims = Jwts.claims().setSubject(value);
 				claims.put("role", "SALES");
-			} else {
+			} else if ("CRM".equalsIgnoreCase(role)) {
 				System.out.println("CRM role check");
 				claims = Jwts.claims().setSubject(value);
 				claims.put("role", "CRM");
+			} else {
+				System.out.println("CLIENT role check");
+				claims = Jwts.claims().setSubject(value);
+				claims.put("role", "CLIENT");
 			}
 			System.out.println("Check claims :: " + claims.getSubject());
 

@@ -45,7 +45,7 @@ public class UserController {
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to add data", System.currentTimeMillis()));
 		}
 	}
-	
+
 	@PostMapping("/addadmin/{id}")
 	public ResponseEntity<?> registerAdmin(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long id, @RequestBody String userJson) {
@@ -146,12 +146,12 @@ public class UserController {
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
 	}
-	
-	@GetMapping("/getamin")
+
+	@GetMapping("/getadmins")
 	public ResponseEntity<?> getAdminsList(@CookieValue(value = "token", required = true) String token,
-			@RequestParam int page, @RequestParam String role) {
+			@RequestParam int page) {
 		try {
-			return service.getAdminsList(token, page, role);
+			return service.getAdminsList(token, page);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
@@ -159,7 +159,8 @@ public class UserController {
 	}
 
 	@GetMapping("/getSales/{role}")
-	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "token", required = true) String token, @PathVariable String role) {
+	public ResponseEntity<?> getSalesListByRole(@CookieValue(value = "token", required = true) String token,
+			@PathVariable String role) {
 		try {
 			return service.getSalesListByRole(token, role);
 		} catch (UserServiceException e) {
@@ -187,4 +188,15 @@ public class UserController {
 		}
 	}
 
+	@PostMapping("/addclient/{id}")
+	public ResponseEntity<?> addClientByCRM(@CookieValue(value = "token", required = true) String token,
+			@PathVariable long id, @RequestBody String userJson) {
+		try {
+			System.out.println("In add admin api");
+			return service.addClient(token, id, userJson);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to add data", System.currentTimeMillis()));
+		}
+	}
 }

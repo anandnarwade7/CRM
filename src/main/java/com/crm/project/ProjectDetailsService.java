@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.crm.security.JwtUtil;
+import com.crm.user.UserController;
 import com.crm.user.UserServiceException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -368,6 +369,17 @@ public class ProjectDetailsService {
 			throw new RuntimeException("Project not found with ID: " + projectId);
 		}
 		return ResponseEntity.ok(convertToMap(projectOpt.get()));
+	}
+
+	public ResponseEntity<?> getFlatById(long projectId) {
+		try {
+			Flat flat = flatRepo.findById(projectId)
+					.orElseThrow(() -> new UserServiceException(409, "Data not find for given id"));
+
+			return ResponseEntity.ok(flat);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update flat status.");
+		}
 	}
 
 	private Map<String, Object> convertToMap(ProjectDetails project) {

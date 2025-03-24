@@ -45,6 +45,19 @@ public class LeadController {
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+	@PostMapping("/assign")
+	public ResponseEntity<?> assignConvertedLeads(@CookieValue(value = "token", required = true) String token,
+			@RequestParam long userId, @RequestParam(required = false) List<Long> assignedTo, @RequestParam(required = false) List<Long> leadIds) {
+		try {
+			System.out.println();
+			return leadService.assignConvertedLeads(token, userId, assignedTo, leadIds);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 
 	@GetMapping("/listbystatus")
 	public ResponseEntity<?> importdClients(@CookieValue(value = "token", required = true) String token,

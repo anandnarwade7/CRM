@@ -47,7 +47,10 @@ public class LeadDetails {
 	@Column(name = "dynamicFields", nullable = true, length = 2000)
 	private String dynamicFieldsJson;
 
-	private String invoiceUrl;
+	private String agreement;
+	private String stampDuty;
+	private String tdsDoc;
+	private String bankSanction;
 	private String action;
 	private long createOn;
 
@@ -120,10 +123,6 @@ public class LeadDetails {
 		return crPerson;
 	}
 
-	public String getInvoiceUrl() {
-		return invoiceUrl;
-	}
-
 	public String getAction() {
 		return action;
 	}
@@ -192,10 +191,6 @@ public class LeadDetails {
 		this.crPerson = crPerson;
 	}
 
-	public void setInvoiceUrl(String invoiceUrl) {
-		this.invoiceUrl = invoiceUrl;
-	}
-
 	public void setAction(String action) {
 		this.action = action;
 	}
@@ -227,7 +222,7 @@ public class LeadDetails {
 	public void setDynamicFieldsJson(String dynamicFieldsJson) {
 		this.dynamicFieldsJson = dynamicFieldsJson;
 	}
-	
+
 	@PrePersist
 	protected void prePersistFunction() {
 		this.createOn = System.currentTimeMillis();
@@ -291,12 +286,47 @@ public class LeadDetails {
 		}
 	}
 
+	public String getAgreement() {
+		return agreement;
+	}
+
+	public String getStampDuty() {
+		return stampDuty;
+	}
+
+	public String getTdsDoc() {
+		return tdsDoc;
+	}
+
+	public String getBankSanction() {
+		return bankSanction;
+	}
+
+	public static ObjectMapper getObjectmapper() {
+		return objectMapper;
+	}
+
+	public void setAgreement(String agreement) {
+		this.agreement = agreement;
+	}
+
+	public void setStampDuty(String stampDuty) {
+		this.stampDuty = stampDuty;
+	}
+
+	public void setTdsDoc(String tdsDoc) {
+		this.tdsDoc = tdsDoc;
+	}
+
+	public void setBankSanction(String bankSanction) {
+		this.bankSanction = bankSanction;
+	}
+
 	public LeadDetails(long id, String leadName, String leadEmail, String leadmobile, long date, long userId,
 			long assignedTo, Status status, String adName, String adSet, String campaign, String city, String callTime,
-			String propertyRange, String crPerson, String massagesJsonData, String dynamicFieldsJson, String invoiceUrl,
-			String action, long createOn, List<Map<String, String>> conversationLogs,
-			Map<String, Object> dynamicFields) {
-		super();
+			String propertyRange, String crPerson, String massagesJsonData, String dynamicFieldsJson, String agreement,
+			String stampDuty, String tdsDoc, String bankSanction, String action, long createOn,
+			List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields) {
 		this.id = id;
 		this.leadName = leadName;
 		this.leadEmail = leadEmail;
@@ -314,7 +344,10 @@ public class LeadDetails {
 		this.crPerson = crPerson;
 		this.massagesJsonData = massagesJsonData;
 		this.dynamicFieldsJson = dynamicFieldsJson;
-		this.invoiceUrl = invoiceUrl;
+		this.agreement = agreement;
+		this.stampDuty = stampDuty;
+		this.tdsDoc = tdsDoc;
+		this.bankSanction = bankSanction;
 		this.action = action;
 		this.createOn = createOn;
 		this.conversationLogs = conversationLogs;
@@ -327,9 +360,10 @@ public class LeadDetails {
 				+ leadmobile + ", date=" + date + ", userId=" + userId + ", assignedTo=" + assignedTo + ", status="
 				+ status + ", adName=" + adName + ", adSet=" + adSet + ", campaign=" + campaign + ", city=" + city
 				+ ", callTime=" + callTime + ", propertyRange=" + propertyRange + ", crPerson=" + crPerson
-				+ ", massagesJsonData=" + massagesJsonData + ", dynamicFieldsJson=" + dynamicFieldsJson
-				+ ", invoiceUrl=" + invoiceUrl + ", action=" + action + ", createOn=" + createOn + ", conversationLogs="
-				+ conversationLogs + ", dynamicFields=" + dynamicFields + "]";
+				+ ", massagesJsonData=" + massagesJsonData + ", dynamicFieldsJson=" + dynamicFieldsJson + ", agreement="
+				+ agreement + ", stampDuty=" + stampDuty + ", tdsDoc=" + tdsDoc + ", bankSanction=" + bankSanction
+				+ ", action=" + action + ", createOn=" + createOn + ", conversationLogs=" + conversationLogs
+				+ ", dynamicFields=" + dynamicFields + "]";
 	}
 
 }

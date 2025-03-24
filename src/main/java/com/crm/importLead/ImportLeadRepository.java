@@ -32,7 +32,7 @@ public interface ImportLeadRepository extends JpaRepository<ImportLead, Long> {
 	@Query("SELECT COUNT(l.id) FROM ImportLead l WHERE l.assignedTo = :userId AND l.status <> :status")
 	long countLeadsByUserIdAndStatusNotAssigned(@Param("userId") Long userId, @Param("status") Status status);
 
-	List<ImportLead> findByStatus(Status converted);
+	List<ImportLead> findByStatus(Status status);
 
 	boolean existsByEmailAndCity(String email, String city);
 

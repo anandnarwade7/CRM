@@ -38,13 +38,23 @@ public class ProjectDetailsController {
 		}
 	}
 
-	@GetMapping("/get/{projectId}")
+	@GetMapping("/getflat/{projectId}")
 	@Transactional
 	public ResponseEntity<?> getProjectDetailsById(@PathVariable long projectId) {
 		try {
 			return projectDetailsService.getProjectById(projectId);
 		} catch (Exception ex) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve project details.");
+		}
+	}
+	
+	@GetMapping("/get/{flatId}")
+	@Transactional
+	public ResponseEntity<?> getFlatById(@PathVariable long flatId) {
+		try {
+			return projectDetailsService.getFlatById(flatId);
+		} catch (Exception ex) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve flat details.");
 		}
 	}
 

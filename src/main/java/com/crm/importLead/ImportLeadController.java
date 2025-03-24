@@ -148,10 +148,11 @@ public class ImportLeadController {
 
 	@PostMapping("/updateFields/{leadId}")
 	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) Status status,
-			@RequestParam(required = false) String comment, @RequestParam(required = false) List<String> key,
-			@RequestParam(required = false) List<Object> value) {
+			@RequestParam(required = false) String comment, @RequestParam(required = false) long dueDate,
+			@RequestParam(required = false) List<String> key, @RequestParam(required = false) List<Object> value) {
 		try {
-			return ResponseEntity.ok(service.addConversationLogAndDynamicField(leadId, status, comment, key, value));
+			return ResponseEntity
+					.ok(service.addConversationLogAndDynamicField(leadId, status, comment, dueDate, key, value));
 		} catch (UserServiceException e) {
 			return ResponseEntity.badRequest().body("Unable to process the request.");
 		} catch (Exception e) {
@@ -203,20 +204,20 @@ public class ImportLeadController {
 	public ResponseEntity<?> exportLeadToExcel() {
 		File leadFile = service.getConvertedLeads();
 		try {
-				HttpHeaders headers = new HttpHeaders();
-				headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Leads_Data.xlsx");
-				headers.add(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+			HttpHeaders headers = new HttpHeaders();
+			headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Leads_Data.xlsx");
+			headers.add(HttpHeaders.CONTENT_TYPE, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 //				headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+fileName);
 //				headers.add(HttpHeaders.CONTENT_TYPE, "text/csv");
 
-				InputStreamResource resource = new InputStreamResource(new FileInputStream(leadFile));
-				return ResponseEntity.ok().headers(headers).contentLength(leadFile.length()).body(resource);
+			InputStreamResource resource = new InputStreamResource(new FileInputStream(leadFile));
+			return ResponseEntity.ok().headers(headers).contentLength(leadFile.length()).body(resource);
 
-			} catch (IOException e) {
-				e.printStackTrace();
-				throw new RuntimeException("Error returning Excel file: " + e.getMessage());
-			} finally {
-				leadFile.delete();
-			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException("Error returning Excel file: " + e.getMessage());
+		} finally {
+			leadFile.delete();
 		}
+	}
 }

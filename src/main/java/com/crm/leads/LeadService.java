@@ -23,10 +23,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.crm.Exception.Error;
+import com.crm.importLead.ImportLead;
+import com.crm.importLead.ImportLeadRepository;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
@@ -34,6 +33,9 @@ import com.crm.user.Status;
 import com.crm.user.User;
 import com.crm.user.UserRepository;
 import com.crm.user.UserServiceException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -45,6 +47,9 @@ public class LeadService {
 	private LeadRepository repository;
 
 	@Autowired
+	private ImportLeadRepository leadRepository;
+
+	@Autowired
 	private JwtUtil jwtUtil;
 
 	@Autowired
@@ -54,129 +59,6 @@ public class LeadService {
 	private NotificationsRepository notificationsRepository;
 
 	private static final ObjectMapper objectMapper = new ObjectMapper();
-
-//	public ResponseEntity<?> readLeadsFromExcel(String token, long userId, List<Long> assignedTo, MultipartFile file) {
-//		int processedCount = 0;
-//		int skippedCount = 0;
-//
-//		if (jwtUtil.isTokenExpired(token)) {
-//			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
-//					.body("Unauthorized: Your session has expired.");
-//		}
-//
-//		String role = jwtUtil.extractRole(token);
-//
-//		if (!"ADMIN".equalsIgnoreCase(role)) {
-//			return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
-//					.body("Forbidden: You do not have the necessary permissions.");
-//		}
-//
-//		try (InputStream inputStream = file.getInputStream(); Workbook workbook = WorkbookFactory.create(inputStream)) {
-//			Sheet sheet = workbook.getSheetAt(0);
-//			Iterator<Row> rowIterator = sheet.iterator();
-//
-//			if (!rowIterator.hasNext()) {
-//				throw new UserServiceException(400, "Uploaded file does not contain any data.");
-//			}
-//
-//			rowIterator.next();
-//
-//			Map<String, Integer> columnMap = new HashMap<>();
-//			Row headerRow = sheet.getRow(0);
-//			for (Cell cell : headerRow) {
-//				columnMap.put(cell.getStringCellValue().trim().toLowerCase(), cell.getColumnIndex());
-//			}
-//
-//			List<LeadDetails> leadsToSave = new ArrayList<>();
-//			List<Long> assignedToList = (assignedTo != null) ? new ArrayList<>(assignedTo) : new ArrayList<>();
-//			int assignedToSize = assignedToList.size();
-//			int index = 0;
-//
-//			Map<Long, Integer> assignedLeadCounts = new HashMap<>();
-//
-//			while (rowIterator.hasNext()) {
-//				Row row = rowIterator.next();
-//
-//				String name = getCellValueAsString(row, columnMap.get("name"));
-//				String email = getCellValueAsString(row, columnMap.get("email"));
-//				String mobileNumber = getCellValueAsString(row, columnMap.get("mobile number"));
-//				String status = getCellValueAsString(row, columnMap.get("status"));
-////				String propertyRange = getCellValueAsString(row, columnMap.get("propertyrange"));
-////				String callTime = getCellValueAsString(row, columnMap.get("calltime"));
-//				String ad = getCellValueAsString(row, columnMap.get("ad"));
-//				String adSet = getCellValueAsString(row, columnMap.get("adset"));
-//				String campaign = getCellValueAsString(row, columnMap.get("campaign"));
-//				String city = getCellValueAsString(row, columnMap.get("city"));
-//				String msg = getCellValueAsString(row, columnMap.get("conversation logs"));
-//				String fields = getCellValueAsString(row, columnMap.get("questions"));
-//
-//				boolean isDuplicate = repository.existsByLeadEmailAndAdNameAndAdSetAndCampaignAndCity(email, ad, adSet,
-//						campaign, city);
-//				if (isDuplicate) {
-//					System.out.println("Duplicate entry skipped: " + ad + ", " + adSet + ", " + campaign + ", " + city);
-//					skippedCount++;
-//					continue;
-//				}
-//
-//				LeadDetails client = new LeadDetails();
-//				client.setLeadName(name);
-//				client.setLeadEmail(email);
-//				client.setLeadmobile(mobileNumber);
-//				client.setDate(System.currentTimeMillis());
-//				client.setUserId(userId);
-//				client.setStatus(getStatusValue(status));
-//				client.setAdName(ad);
-//				client.setAdSet(adSet);
-//				client.setCampaign(campaign);
-//				client.setCity(city);
-////				client.setCallTime(callTime);
-////				client.setPropertyRange(propertyRange);
-//				client.setMassagesJsonData(msg);
-//				client.setDynamicFieldsJson(fields);
-//
-//				if (!assignedToList.isEmpty()) {
-//
-//					client.setAssignedTo(assignedToList.get(index % assignedToSize));
-//					User CrById = userRepository.findSalesById(assignedToList.get(index % assignedToSize));
-//					System.out.println("User found :: " + CrById);
-//					client.setCrPerson(CrById.getName());
-//					index++;
-//
-//					assignedLeadCounts.put(assignedToList.get(index % assignedToSize),
-//							assignedLeadCounts.getOrDefault(assignedToList.get(index % assignedToSize), 0) + 1);
-//				}
-//
-//				leadsToSave.add(client);
-//				processedCount++;
-//			}
-//
-//			repository.saveAll(leadsToSave);
-//			if (assignedToList.isEmpty()) {
-//				assignLeadsToCRM();
-//			}
-//
-//			assignedLeadCounts.forEach((crUserId, leadCount) -> {
-//				System.out.println("Attempting to send notification for CR User ID: " + crUserId
-//						+ " with lead count: " + leadCount);
-//
-//				User salesUser = userRepository.findById(crUserId).orElse(null);
-//				if (salesUser != null) {
-//					String message = leadCount + " leads assigned to you.";
-//					sendNotification(salesUser, message);
-//				}
-//			});
-//
-//			return ResponseEntity
-//					.ok("File processed successfully. Processed: " + processedCount + ", Skipped: " + skippedCount);
-//
-//		} catch (UserServiceException e) {
-//			return ResponseEntity.status(e.getStatusCode()).body(
-//					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
-//		} catch (Exception ex) {
-//			ex.printStackTrace();
-//			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
-//		}
-//	}
 
 	public ResponseEntity<?> readLeadsFromExcel(String token, long userId, List<Long> assignedTo, MultipartFile file) {
 		int processedCount = 0;
@@ -318,6 +200,100 @@ public class LeadService {
 		}
 	}
 
+	public ResponseEntity<?> assignConvertedLeads(String token, long userId, List<Long> assignedTo,
+			List<Long> leadIds) {
+		try {
+			int processedCount = 0;
+			int skippedCount = 0;
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String role = jwtUtil.extractRole(token);
+			if (!"ADMIN".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			List<LeadDetails> leadsToSave = new ArrayList<>();
+			Map<Long, Long> assignedLeadCounts = new HashMap<>();
+
+			if (assignedTo != null && !assignedTo.isEmpty()) {
+				for (Long userIdFromList : assignedTo) {
+					long leadCount = repository.countLeadsByAssignedTo(userIdFromList);
+					assignedLeadCounts.put(userIdFromList, leadCount);
+				}
+			} else {
+				List<User> crmUsers = userRepository.findUsersByRole("CRM");
+				crmUsers.forEach(user -> {
+					long leadCount = repository.countLeadsByAssignedTo(user.getId());
+					assignedLeadCounts.put(user.getId(), leadCount);
+				});
+			}
+
+			for (Long id : leadIds) {
+
+				ImportLead lead = leadRepository.findById(id)
+						.orElseThrow(() -> new UserServiceException(409, "Data with given id is not found"));
+
+				if (repository.existsByLeadEmailAndAdNameAndAdSetAndCampaignAndCity(lead.getEmail(), lead.getAdName(),
+						lead.getAdSet(), lead.getCampaign(), lead.getCity())) {
+					skippedCount++;
+					continue;
+				}
+
+				LeadDetails client = new LeadDetails();
+				client.setLeadName(lead.getName());
+				client.setLeadEmail(lead.getEmail());
+				client.setLeadmobile(lead.getMobileNumber());
+				client.setDate(System.currentTimeMillis());
+				client.setUserId(userId);
+				client.setStatus(lead.getStatus());
+				client.setAdName(lead.getAdName());
+				client.setAdSet(lead.getAdSet());
+				client.setCampaign(lead.getCampaign());
+				client.setCity(lead.getCity());
+				client.setMassagesJsonData(lead.getJsonData());
+				client.setDynamicFieldsJson(lead.getDynamicFieldsJson());
+
+				Long assignedUserId = assignedLeadCounts.entrySet().stream().min(Map.Entry.comparingByValue())
+						.map(Map.Entry::getKey).orElse(null);
+
+				if (assignedUserId != null) {
+					client.setAssignedTo(assignedUserId);
+					User CrById = userRepository.findSalesById(assignedUserId);
+					client.setCrPerson(CrById.getName());
+
+					assignedLeadCounts.put(assignedUserId, assignedLeadCounts.get(assignedUserId) + 1);
+				}
+
+				leadsToSave.add(client);
+				processedCount++;
+			}
+
+			repository.saveAll(leadsToSave);
+
+			assignedLeadCounts.forEach((crUserId, leadCount) -> {
+				User salesUser = userRepository.findById(crUserId).orElse(null);
+				if (salesUser != null) {
+					sendNotification(salesUser, leadCount + " leads assigned to you.");
+				}
+			});
+
+			return ResponseEntity
+					.ok("File processed successfully. Processed: " + processedCount + ", Skipped: " + skippedCount);
+
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+		}
+	}
+
 //	private String parseConversationLogs(String msg) {
 //	    if (msg == null || msg.trim().isEmpty()) {
 //	        return "[]"; // Return empty JSON array if msg is null/empty
@@ -391,7 +367,7 @@ public class LeadService {
 
 	private void sendNotification(User salesUser, String message) {
 		try {
-			Notifications notification = new Notifications(false, message, salesUser.getEmail(), message,
+			Notifications notification = new Notifications(false, message, salesUser.getEmail(), "Client Details",
 					System.currentTimeMillis());
 			notificationsRepository.save(notification);
 		} catch (Exception e) {
@@ -580,18 +556,6 @@ public class LeadService {
 			throw new RuntimeException("Error saving lead data", e);
 		}
 	}
-
-//	public List<Map<String, String>> getConversationLogs(LeadDetails client) {
-//		if (client.getMassagesJsonData() == null || client.getMassagesJsonData().isEmpty()) {
-//			return new ArrayList<>();
-//		}
-//		try {
-//			return objectMapper.readValue(client.getMassagesJsonData(), new TypeReference<List<Map<String, String>>>() {
-//			});
-//		} catch (JsonProcessingException e) {
-//			return new ArrayList<>();
-//		}
-//	}
 
 	private String parseConversationLogs(String msg) {
 		if (msg == null || msg.trim().isEmpty()) {
