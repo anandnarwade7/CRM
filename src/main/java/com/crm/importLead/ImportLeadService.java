@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
@@ -37,10 +38,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import com.crm.Exception.Error;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
+import com.crm.user.Admins;
+import com.crm.user.AdminsRepository;
 import com.crm.user.Status;
 import com.crm.user.User;
 import com.crm.user.UserRepository;
@@ -48,6 +52,7 @@ import com.crm.user.UserServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -60,6 +65,9 @@ public class ImportLeadService {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private AdminsRepository adminRepository;
 
 	@Autowired
 	private JwtUtil jwtUtil;
@@ -278,16 +286,22 @@ public class ImportLeadService {
 						.body("Unauthorized: Your session has expired.");
 			}
 
-			String adminRole = jwtUtil.extractRole(token);
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String adminRole = userClaims.get("role");
+			String email = userClaims.get("email");
 			if (!"ADMIN".equalsIgnoreCase(adminRole) && !"SALES".equalsIgnoreCase(adminRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
+			Admins admin = adminRepository.findByEmail(email);
+			if (admin == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found for email: " + email);
+			}
 			Pageable pageable = PageRequest.of(page - 1, 10);
 			Page<ImportLead> unassignedLeads = null;
 			System.out.println("Status comming :: " + status);
-			unassignedLeads = repository.findByStatusOrderByImportedOnDesc(status, pageable);
+			unassignedLeads = repository.findByStatusAndUserIdOrderByImportedOnDesc(status, admin.getId(), pageable);
 			System.out.println("Leads found :: " + unassignedLeads.getContent().size());
 
 			if (unassignedLeads.isEmpty()) {
@@ -369,16 +383,16 @@ public class ImportLeadService {
 	@Transactional
 	public ImportLead addConversationLog(Long leadId, String date, String comment) {
 		try {
-		ImportLead lead = repository.findById(leadId)
-				.orElseThrow(() -> new RuntimeException("Lead not found with ID: " + leadId));
+			ImportLead lead = repository.findById(leadId)
+					.orElseThrow(() -> new RuntimeException("Lead not found with ID: " + leadId));
 
-		List<Map<String, String>> logs = getConversationLogs(lead);
+			List<Map<String, String>> logs = getConversationLogs(lead);
 
-		Map<String, String> logEntry = new HashMap<>();
-		logEntry.put("date", date);
-		logEntry.put("comment", comment);
+			Map<String, String> logEntry = new HashMap<>();
+			logEntry.put("date", date);
+			logEntry.put("comment", comment);
 
-		logs.add(logEntry);
+			logs.add(logEntry);
 
 			lead.setJsonData(objectMapper.writeValueAsString(logs));
 			ImportLead leads = repository.save(lead);
@@ -391,8 +405,8 @@ public class ImportLeadService {
 	public List<Map<String, String>> getConversationLogs(ImportLead lead) {
 		try {
 			if (lead.getJsonData() == null || lead.getJsonData().isEmpty()) {
-			return new ArrayList<>();
-		}
+				return new ArrayList<>();
+			}
 			return objectMapper.readValue(lead.getJsonData(), new TypeReference<List<Map<String, String>>>() {
 			});
 		} catch (JsonProcessingException e) {
@@ -404,11 +418,11 @@ public class ImportLeadService {
 	public ImportLead addDynamicField(Long leadId, String key, Object value) {
 		try {
 			ImportLead lead = repository.findById(leadId)
-				.orElseThrow(() -> new RuntimeException("Lead not found with ID: " + leadId));
+					.orElseThrow(() -> new RuntimeException("Lead not found with ID: " + leadId));
 
-		Map<String, Object> fields = getDynamicFields(lead);
+			Map<String, Object> fields = getDynamicFields(lead);
 
-		fields.put(key, value);
+			fields.put(key, value);
 
 			lead.setDynamicFieldsJson(objectMapper.writeValueAsString(fields));
 			ImportLead leads = repository.save(lead);

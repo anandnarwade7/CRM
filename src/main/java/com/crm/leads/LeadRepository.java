@@ -18,7 +18,9 @@ public interface LeadRepository  extends JpaRepository<LeadDetails, Long>{
 	@Query("SELECT l FROM LeadDetails l WHERE l.assignedTo = 0")
 	List<LeadDetails> findByAssignedTo();
 
-	Page<LeadDetails> findByStatusOrderByCreateOnDesc(Status status, Pageable pageable);
+	@Query("SELECT u FROM LeadDetails u WHERE u.status = :status AND u.userId=:id ORDER BY u.createOn DESC")
+	Page<LeadDetails> findByStatusAndUserIdOrderByCreateOnDesc(@Param("status") Status status,
+			@Param("id") long userId, Pageable pageable);
 
 	boolean existsByLeadEmailAndCity(String email, String city);
 

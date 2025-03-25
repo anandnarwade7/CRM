@@ -174,7 +174,6 @@ public class UserService {
 	}
 
 	private boolean isValidEmail(String email) {
-		// Updated regex to support multi-part TLDs and valid email structures
 		String emailRegex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 		Pattern pattern = Pattern.compile(emailRegex);
 		Matcher matcher = pattern.matcher(email);
@@ -324,60 +323,6 @@ public class UserService {
 			throw new UserServiceException(409, "Invalid Credentials ");
 		}
 	}
-
-//	public ResponseEntity<?> authenticateUser(String user, HttpServletResponse response) {
-//		try {
-//			ObjectMapper objectMapper = new ObjectMapper();
-//			JsonNode jsonNode = objectMapper.readTree(user);
-//			String role = jsonNode.get("role").asText();
-//			String email = jsonNode.get("email").asText();
-//			String userPassword = jsonNode.get("password").asText();
-//
-//			// Email validation
-//			if (!isValidEmail(email)) {
-//
-//				throw new UserServiceException(400, "Invalid email format");
-//			}
-//
-//			User byEmail = repository.findByEmail(email);
-//
-//			System.out.println("User found :: " + byEmail);
-//			if (byEmail == null || !role.equals(byEmail.getRole())) {
-//				System.out.println("In role check :: " + byEmail.getRole() + role);
-//				throw new UserServiceException(409, "User profile not found");
-//			}
-//
-//			System.out.println("commig pass :: " + userPassword);
-//			String dbPassword = byEmail.getPassword();
-//			System.out.println("dbPassword :: " + dbPassword);
-//
-//			if (dbPassword.equals(userPassword)) {
-//
-//				String token = jwtUtil.createToken(byEmail.getEmail(), byEmail.getRole());
-//				System.out.println("Token Created Successfully :: " + token);
-//
-//				Cookie cookie = new Cookie("token", token);
-//				cookie.setHttpOnly(true); // Helps mitigate XSS attacks
-//				cookie.setSecure(false); // Ensures cookies are sent over HTTPS only (set to false in development
-//											// environments without HTTPS)
-//				cookie.setMaxAge(60 * 60 * 6); // Set the expiry time (6 hrs)
-//				cookie.setPath("/"); // Set the path to make the cookie available across the entire domain
-//				response.addCookie(cookie);
-//				String userObject = getUserObject1(byEmail, token);
-//				return ResponseEntity.ok(userObject);
-//
-//			} else {
-//				throw new UserServiceException(409, "Invalid email and password");
-//			}
-//		} catch (UserServiceException e) {
-//
-//			return ResponseEntity.status(e.getStatusCode()).body(
-//					new Error(e.getStatusCode(), e.getMessage(), "Unable to login user", System.currentTimeMillis()));
-//
-//		} catch (Exception ex) {
-//			throw new UserServiceException(409, "Invalid Credentials");
-//		}
-//	}
 
 	public ResponseEntity<?> authenticateUser(String user, HttpServletResponse response) {
 		try {
@@ -630,6 +575,44 @@ public class UserService {
 				dbUser.setAction(Status.UNBLOCK);
 			} else if ("block".equalsIgnoreCase(response)) {
 				dbUser.setAction(Status.BLOCK);
+			}
+
+			User existingUser = repository.save(dbUser);
+			String userObject = getUserObject(existingUser);
+			return ResponseEntity.ok(userObject);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to Register User", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			throw new UserServiceException(409, " Invalid Credentials ");
+		}
+	}
+
+	public ResponseEntity<?> updateAdminAsBlockUnBlockBySuperAdmin(String token, long userId, Status response,
+			String note) {
+		try {
+			System.out.println("Check 1");
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String role = jwtUtil.extractRole(token);
+
+			User dbUser = repository.findById(userId)
+					.orElseThrow(() -> new UserServiceException(409, "User does not exist"));
+
+			if (!"SUPER ADMIN".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			dbUser.setAction(response);
+			List<User> usersByUserId = repository.findUsersByUserId(dbUser.getId());
+			for (User user : usersByUserId) {
+				user.setAction(response);
+				repository.save(user);
 			}
 
 			User existingUser = repository.save(dbUser);

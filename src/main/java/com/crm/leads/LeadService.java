@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
@@ -23,12 +24,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import com.crm.Exception.Error;
 import com.crm.importLead.ImportLead;
 import com.crm.importLead.ImportLeadRepository;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
+import com.crm.user.Admins;
+import com.crm.user.AdminsRepository;
 import com.crm.user.Status;
 import com.crm.user.User;
 import com.crm.user.UserRepository;
@@ -36,6 +40,7 @@ import com.crm.user.UserServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -54,6 +59,9 @@ public class LeadService {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private AdminsRepository adminRepository;
 
 	@Autowired
 	private NotificationsRepository notificationsRepository;
@@ -408,16 +416,26 @@ public class LeadService {
 						.body("Unauthorized: Your session has expired.");
 			}
 
-			String adminRole = jwtUtil.extractRole(token);
-			if (!"ADMIN".equalsIgnoreCase(adminRole) && !"CRM".equalsIgnoreCase(adminRole)) {
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String userRole = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			System.out.println("User Role: " + userRole + ", Email: " + email);
+
+			if (!"SUPER ADMIN".equalsIgnoreCase(userRole) && !"ADMIN".equalsIgnoreCase(userRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			Admins admin = adminRepository.findByEmail(email);
+			if (admin == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found for email: " + email);
 			}
 
 			Pageable pageable = PageRequest.of(page - 1, 10);
 			Page<LeadDetails> unassignedLeads = null;
 			System.out.println("Status comming :: " + status);
-			unassignedLeads = repository.findByStatusOrderByCreateOnDesc(status, pageable);
+			unassignedLeads = repository.findByStatusAndUserIdOrderByCreateOnDesc(status, admin.getId(), pageable);
 			System.out.println("Leads found :: " + unassignedLeads.getContent().size());
 
 			if (unassignedLeads.isEmpty()) {

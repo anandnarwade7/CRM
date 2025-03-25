@@ -124,6 +124,18 @@ public class UserController {
 					"Invalid User Credentials", System.currentTimeMillis()));
 		}
 	}
+	
+	@PutMapping("/updateadmin/{superadminId}/{response}")
+	public ResponseEntity<?> updateAdminAsBlockUnBlockBySuperAdmin(@CookieValue(value = "token", required = true) String token,
+			@PathVariable long adminId, @PathVariable Status response,
+			@RequestParam(name = "note", required = false) String note) {
+		try {
+			return service.updateAdminAsBlockUnBlockBySuperAdmin(token, adminId, response, note);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Invalid User Credentials", System.currentTimeMillis()));
+		}
+	}
 
 	@PutMapping("/deleteUser/{adminId}/{userId}")
 	public ResponseEntity<?> deleteUser(@CookieValue(value = "token", required = true) String token,
