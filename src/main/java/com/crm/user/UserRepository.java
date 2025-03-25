@@ -23,8 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	@Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role) ORDER BY u.createdOn DESC")
 	Page<User> findByRoleOrderByCreatedOnDesc(String role, Pageable pageable);
 
-	@Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role) ORDER BY u.createdOn DESC")
-	List<User> findByRoleOrderByCreatedOnDesc(String role);
+	@Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role) AND u.userId = :id ORDER BY u.createdOn DESC")
+	List<User> findByRoleAndUserIdOrderByCreatedOnDesc(String role, @Param("id") long id);
 
 	User findSalesById(Long long1);
 
@@ -33,8 +33,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	@Query("SELECT u FROM User u WHERE LOWER(u.role) = LOWER(:role) AND u.id = :id")
 	List<User> findByRoleWhereUserId(@Param("role") String role, @Param("id") long id);
 
-	@Query("SELECT COUNT(u) FROM User u WHERE u.role = :role AND u.id= :id")
-	long findByRoleAndUserId(String role);
-
+	@Query("SELECT COUNT(u) FROM User u WHERE u.role = :role AND u.userId = :id")
+	long findByRoleAndUserId(String role, @Param("id") long id);
 
 }

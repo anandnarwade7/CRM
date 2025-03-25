@@ -1,5 +1,6 @@
 package com.crm.user;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -94,10 +95,10 @@ public class UserService {
 		try {
 			ObjectMapper objectMapper = new ObjectMapper();
 			ObjectNode responseJson = objectMapper.createObjectNode();
-			System.out.println("Role :--> "+role);
+			System.out.println("Role :--> " + role);
 			if ("SUPER ADMIN".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role)) {
 				Admins admin = adminRepository.findByEmail(email);
-				System.out.println("Admin :--> "+admin);
+				System.out.println("Admin :--> " + admin);
 				responseJson.put("id", admin.getId());
 				responseJson.put("name", admin.getName());
 //				responseJson.put("lastName", admin.getLastName());
@@ -112,9 +113,9 @@ public class UserService {
 				responseJson.put("endDate", admin.getEndDate());
 
 				responseJson.put("token", token);
-			} else if ("SALES".equalsIgnoreCase(role) || "CRM".equalsIgnoreCase(role)){
+			} else if ("SALES".equalsIgnoreCase(role) || "CRM".equalsIgnoreCase(role)) {
 				User user = repository.findByEmail(email);
-				System.out.println("User(SALES/CRM) :--> "+user);
+				System.out.println("User(SALES/CRM) :--> " + user);
 				responseJson.put("id", user.getId());
 				responseJson.put("name", user.getName());
 //			responseJson.put("lastName", user.getLastName());
@@ -125,15 +126,16 @@ public class UserService {
 				responseJson.put("action", user.getAction().toString());
 				responseJson.put("createdOn", user.getCreatedOn());
 				responseJson.put("token", token);
-			}else if("CLIENT".equalsIgnoreCase(role)){
+			} else if ("CLIENT".equalsIgnoreCase(role)) {
 				Client user = clientRepository.findByEmail(email);
-				System.out.println("Client :--> "+user);
+				System.out.println("Client :--> " + user);
 				responseJson.put("id", user.getId());
 				responseJson.put("name", user.getName());
 //			responseJson.put("lastName", user.getLastName());
 				responseJson.put("email", user.getEmail());
 				responseJson.put("mobile", user.getMobile());
 				responseJson.put("role", user.getRole());
+				responseJson.put("password", user.getPassword());
 				responseJson.put("profilePic", user.getProfilePic());
 				responseJson.put("action", user.getAction().toString());
 				responseJson.put("createdOn", user.getCreatedOn());
@@ -423,7 +425,7 @@ public class UserService {
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
 				}
-			}else if (role.equalsIgnoreCase("CLIENT") ) {
+			} else if (role.equalsIgnoreCase("CLIENT")) {
 				byClientEmail = clientRepository.findByEmail(email);
 				if (byClientEmail == null) {
 					throw new UserServiceException(409, "Admin profile not found");
@@ -438,7 +440,7 @@ public class UserService {
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
 				}
-			}else {
+			} else {
 				throw new UserServiceException(409, "Invalid role provided. Only USER or ADMIN are allowed.");
 			}
 		} catch (UserServiceException e) {
@@ -719,11 +721,17 @@ public class UserService {
 						.body("Unauthorized: Your session has expired.");
 			}
 
-			String adminRole = jwtUtil.extractRole(token);
-			Admins admin = adminRepository.findByRole(adminRole);
-			if (!"ADMIN".equalsIgnoreCase(adminRole) && !"ADMIN".equalsIgnoreCase(adminRole)) {
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String adminRole = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			if (!"SUPER ADMIN".equalsIgnoreCase(adminRole) && !"ADMIN".equalsIgnoreCase(adminRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			Admins admin = adminRepository.findByEmail(email);
+			if (admin == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found for email: " + email);
 			}
 			role = role.trim();
 			Pageable pageable = PageRequest.of(page - 1, 10);
@@ -760,12 +768,19 @@ public class UserService {
 						.body("Unauthorized: Your session has expired.");
 			}
 
-			String adminRole = jwtUtil.extractRole(token);
-			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String adminRole = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			if (!"SUPER ADMIN".equalsIgnoreCase(adminRole) && !"ADMIN".equalsIgnoreCase(adminRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
-			List<User> users = repository.findByRoleOrderByCreatedOnDesc(role);
+			Admins admin = adminRepository.findByEmail(email);
+			if (admin == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found for email: " + email);
+			}
+			List<User> users = repository.findByRoleAndUserIdOrderByCreatedOnDesc(role, admin.getId());
 
 			if (users.isEmpty()) {
 				return ResponseEntity.ok("No users found for the role: " + role);
@@ -817,32 +832,53 @@ public class UserService {
 
 	public ResponseEntity<?> getUsersCountByRole(String token) {
 		try {
-			if (token == null) {
+			if (token == null || token.trim().isEmpty()) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: No token provided.");
 			}
+
+			System.out.println("Received token: " + token);
 
 			if (jwtUtil.isTokenExpired(token)) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: Your session has expired.");
 			}
 
-			String adminRole = jwtUtil.extractRole(token);
-			if (!"ADMIN".equalsIgnoreCase(adminRole) && !"ADMIN".equalsIgnoreCase(adminRole)) {
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String userRole = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			System.out.println("User Role: " + userRole + ", Email: " + email);
+
+			if (!"SUPER ADMIN".equalsIgnoreCase(userRole) && !"ADMIN".equalsIgnoreCase(userRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
-			long salesCount = repository.findByRoleAndUserId("SALES");
-			long crmCount = repository.findByRoleAndUserId("CRM");
-			long adminsCountByRole = adminRepository.adminsCountByRole("ADMIN");
-			long leads = leadRepository.count();
-			if (!"ADMIN".equalsIgnoreCase(adminRole)) {
-				return ResponseEntity.ok(Map.of("sales", salesCount, "crm", crmCount, "leads", leads));
-			} else {
-				return ResponseEntity.ok(Map.of("amins", adminsCountByRole));
+
+			Admins admin = adminRepository.findByEmail(email);
+			if (admin == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found for email: " + email);
 			}
+
+			long salesCount = repository.findByRoleAndUserId("SALES", admin.getId());
+			long crmCount = repository.findByRoleAndUserId("CRM", admin.getId());
+			long totalLeads = leadRepository.count();
+
+			Map<String, Object> responseMap = new HashMap<>();
+			responseMap.put("sales", salesCount);
+			responseMap.put("crm", crmCount);
+			responseMap.put("leads", totalLeads);
+
+			if ("SUPER ADMIN".equalsIgnoreCase(userRole)) {
+				long adminsCountByRole = adminRepository.adminsCountByRole("ADMIN");
+				responseMap.put("admins", adminsCountByRole);
+			}
+
+			return ResponseEntity.ok(responseMap);
+
 		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details: " + e.getMessage());
 		}
 	}
 

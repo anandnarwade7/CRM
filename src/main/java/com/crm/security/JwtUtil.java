@@ -1,9 +1,15 @@
 package com.crm.security;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.naming.AuthenticationException;
+
 import org.springframework.stereotype.Service;
+
 import com.crm.user.UserServiceException;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtParser;
@@ -50,41 +56,56 @@ public class JwtUtil {
 //		}
 //	}
 
-	public String createToken(String value, String role) {
-		try {
-			Claims claims;
-			if ("SUPER ADMIN".equalsIgnoreCase(role)) {
-				System.out.println("Admin role check");
-				claims = Jwts.claims().setSubject(value);
-				claims.put("role", "SUPER ADMIN");
-			} else if ("ADMIN".equalsIgnoreCase(role)) {
-				System.out.println("Admin role check");
-				claims = Jwts.claims().setSubject(value);
-				claims.put("role", "ADMIN");
-			} else if ("SALES".equalsIgnoreCase(role)) {
-				System.out.println("User role check");
-				claims = Jwts.claims().setSubject(value);
-				claims.put("role", "SALES");
-			} else if ("CRM".equalsIgnoreCase(role)) {
-				System.out.println("CRM role check");
-				claims = Jwts.claims().setSubject(value);
-				claims.put("role", "CRM");
-			} else {
-				System.out.println("CLIENT role check");
-				claims = Jwts.claims().setSubject(value);
-				claims.put("role", "CLIENT");
-			}
-			System.out.println("Check claims :: " + claims.getSubject());
+//	public String createToken(String value, String role) {
+//		try {
+//			Claims claims;
+//			if ("SUPER ADMIN".equalsIgnoreCase(role)) {
+//				System.out.println("Admin role check");
+//				claims = Jwts.claims().setSubject(value);
+//				claims.put("role", "SUPER ADMIN");
+//			} else if ("ADMIN".equalsIgnoreCase(role)) {
+//				System.out.println("Admin role check");
+//				claims = Jwts.claims().setSubject(value);
+//				claims.put("role", "ADMIN");
+//			} else if ("SALES".equalsIgnoreCase(role)) {
+//				System.out.println("User role check");
+//				claims = Jwts.claims().setSubject(value);
+//				claims.put("role", "SALES");
+//			} else if ("CRM".equalsIgnoreCase(role)) {
+//				System.out.println("CRM role check");
+//				claims = Jwts.claims().setSubject(value);
+//				claims.put("role", "CRM");
+//			} else {
+//				System.out.println("CLIENT role check");
+//				claims = Jwts.claims().setSubject(value);
+//				claims.put("role", "CLIENT");
+//			}
+//			System.out.println("Check claims :: " + claims.getSubject());
+//
+//			Date expiryDate = new Date(System.currentTimeMillis() + EXPIRATION_TIME); // Convert long to Date
+//
+//			return Jwts.builder().setClaims(claims).setIssuedAt(new Date()).setExpiration(expiryDate)
+//					.signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes())).compact();
+//		} catch (Exception ex) {
+//			throw new UserServiceException(409, "Invalid Credentials ");
+//		}
+//	}
 
-			Date expiryDate = new Date(System.currentTimeMillis() + EXPIRATION_TIME); // Convert long to Date
+	public String createToken(String email, String role) {
+		try {
+			Claims claims = Jwts.claims().setSubject(email);
+			claims.put("role", role);
+			claims.put("email", email);
+
+			System.out.println("Check claims :: " + claims);
+
+			Date expiryDate = new Date(System.currentTimeMillis() + EXPIRATION_TIME);
 
 			return Jwts.builder().setClaims(claims).setIssuedAt(new Date()).setExpiration(expiryDate)
 					.signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes())).compact();
 
-		} catch (
-
-		Exception ex) {
-			throw new UserServiceException(409, "Invalid Credentials ");
+		} catch (Exception ex) {
+			throw new UserServiceException(409, "Invalid Credentials");
 		}
 	}
 
@@ -153,6 +174,21 @@ public class JwtUtil {
 		String string = extractClaims(token).get("role", String.class);
 		System.err.println("Role :: " + string);
 		return string;
+	}
+
+	public Map<String, String> extractRole1(String token) {
+		Claims claims = extractClaims(token);
+
+		String role = claims.get("role", String.class);
+		String email = claims.get("email", String.class);
+
+		System.err.println("Extracted Role: " + role + ", Email: " + email);
+
+		Map<String, String> roleEmailMap = new HashMap<>();
+		roleEmailMap.put("role", role);
+		roleEmailMap.put("email", email);
+
+		return roleEmailMap;
 	}
 
 	public String getEmail(Claims claims) {
