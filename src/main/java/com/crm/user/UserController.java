@@ -127,10 +127,10 @@ public class UserController {
 	
 	@PutMapping("/updateadmin/{superadminId}/{response}")
 	public ResponseEntity<?> updateAdminAsBlockUnBlockBySuperAdmin(@CookieValue(value = "token", required = true) String token,
-			@PathVariable long adminId, @PathVariable Status response,
+			@PathVariable long superadminId, @PathVariable Status response,
 			@RequestParam(name = "note", required = false) String note) {
 		try {
-			return service.updateAdminAsBlockUnBlockBySuperAdmin(token, adminId, response, note);
+			return service.updateAdminAsBlockUnBlockBySuperAdmin(token, superadminId, response, note);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Invalid User Credentials", System.currentTimeMillis()));

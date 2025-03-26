@@ -350,7 +350,7 @@ public class UserService {
 				}
 				System.out.println("User found: " + byEmail);
 
-				if (byEmail.getPassword().equals(userPassword)) {
+				if (byEmail.getPassword().equals(userPassword)&& byEmail.getAction()!=Status.BLOCK) {
 					return createResponse(response, byEmail.getEmail(), byEmail.getRole());
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
@@ -365,7 +365,7 @@ public class UserService {
 				}
 				System.out.println("Admin found: " + byAdminEmail);
 
-				if (byAdminEmail.getPassword().equals(userPassword)) {
+				if (byAdminEmail.getPassword().equals(userPassword) && byAdminEmail.getAction() != Status.BLOCK) {
 					return createResponse(response, byAdminEmail.getEmail(), byAdminEmail.getRole());
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
@@ -380,7 +380,7 @@ public class UserService {
 				}
 				System.out.println("Admin found: " + byClientEmail);
 
-				if (byClientEmail.getPassword().equals(userPassword)) {
+				if (byClientEmail.getPassword().equals(userPassword) && byClientEmail.getAction() != Status.BLOCK) {
 					return createResponse(response, byClientEmail.getEmail(), byClientEmail.getRole());
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
@@ -600,7 +600,7 @@ public class UserService {
 
 			String role = jwtUtil.extractRole(token);
 
-			User dbUser = repository.findById(userId)
+			Admins dbUser = adminRepository.findById(userId)
 					.orElseThrow(() -> new UserServiceException(409, "User does not exist"));
 
 			if (!"SUPER ADMIN".equalsIgnoreCase(role)) {
@@ -615,7 +615,7 @@ public class UserService {
 				repository.save(user);
 			}
 
-			User existingUser = repository.save(dbUser);
+			Admins existingUser = adminRepository.save(dbUser);
 			String userObject = getUserObject(existingUser);
 			return ResponseEntity.ok(userObject);
 		} catch (UserServiceException e) {
@@ -854,7 +854,11 @@ public class UserService {
 
 			if ("SUPER ADMIN".equalsIgnoreCase(userRole)) {
 				long adminsCountByRole = adminRepository.adminsCountByRole("ADMIN");
+				long sales = repository.findCountByRole("SALES");
+				long crm = repository.findCountByRole("CRM");
 				responseMap.put("admins", adminsCountByRole);
+				responseMap.put("sales", sales);
+				responseMap.put("crm", crm);
 			}
 
 			return ResponseEntity.ok(responseMap);
