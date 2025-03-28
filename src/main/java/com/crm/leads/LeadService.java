@@ -26,13 +26,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.crm.Exception.Error;
+import com.crm.fileHandler.FilesManager;
 import com.crm.importLead.ImportLead;
 import com.crm.importLead.ImportLeadRepository;
+import com.crm.mailservice.MailService;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
 import com.crm.user.Admins;
 import com.crm.user.AdminsRepository;
+import com.crm.user.Client;
+import com.crm.user.ClientRepository;
 import com.crm.user.Status;
 import com.crm.user.User;
 import com.crm.user.UserRepository;
@@ -58,10 +62,19 @@ public class LeadService {
 	private JwtUtil jwtUtil;
 
 	@Autowired
+	private FilesManager fileManager;
+
+	@Autowired
 	private UserRepository userRepository;
 
 	@Autowired
+	private ClientRepository clientRepository;
+
+	@Autowired
 	private AdminsRepository adminRepository;
+	
+	@Autowired
+	private MailService mailService;
 
 	@Autowired
 	private NotificationsRepository notificationsRepository;
@@ -383,6 +396,16 @@ public class LeadService {
 		}
 	}
 
+	private void sendNotificationToClient(Client client, String message) {
+		try {
+			Notifications notification = new Notifications(false, message, client.getEmail(), "Client Details",
+					System.currentTimeMillis());
+			notificationsRepository.save(notification);
+		} catch (Exception e) {
+			throw new RuntimeException("Error saving dynamic fields", e);
+		}
+	}
+
 	private String getCellValueAsString(Row row, int columnIndex) {
 		Cell cell = row.getCell(columnIndex);
 		if (cell == null)
@@ -576,23 +599,23 @@ public class LeadService {
 	}
 
 	private String parseConversationLogs(String msg) {
-		if (msg == null || msg.trim().isEmpty()) {
-			return "[]";
-		}
-
-		String[] logs = msg.split("\\r?\\n");
-		List<Map<String, String>> conversationLogs = new ArrayList<>();
-
-		for (String log : logs) {
-			log = log.trim();
-			if (!log.isEmpty()) {
-				Map<String, String> entry = new HashMap<>();
-				entry.put("comment", log);
-				conversationLogs.add(entry);
-			}
-		}
-
 		try {
+			if (msg == null || msg.trim().isEmpty()) {
+				return "[]";
+			}
+
+			String[] logs = msg.split("\\r?\\n");
+			List<Map<String, String>> conversationLogs = new ArrayList<>();
+
+			for (String log : logs) {
+				log = log.trim();
+				if (!log.isEmpty()) {
+					Map<String, String> entry = new HashMap<>();
+					entry.put("comment", log);
+					conversationLogs.add(entry);
+				}
+			}
+
 			return new ObjectMapper().writeValueAsString(conversationLogs);
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
@@ -601,10 +624,10 @@ public class LeadService {
 	}
 
 	public List<Map<String, String>> getConversationLogs(LeadDetails client) {
-		if (client.getMassagesJsonData() == null || client.getMassagesJsonData().isEmpty()) {
-			return new ArrayList<>();
-		}
 		try {
+			if (client.getMassagesJsonData() == null || client.getMassagesJsonData().isEmpty()) {
+				return new ArrayList<>();
+			}
 			return objectMapper.readValue(client.getMassagesJsonData(), new TypeReference<List<Map<String, String>>>() {
 			});
 		} catch (JsonProcessingException e) {
@@ -639,6 +662,79 @@ public class LeadService {
 			return ResponseEntity.ok(response);
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details: " + e.getMessage());
+		}
+	}
+
+	private String extractFileName(String fileUrl) {
+		return fileUrl.substring(fileUrl.lastIndexOf("=") + 1).replaceAll("^[0-9]+", ""); 
+	}
+
+	public ResponseEntity<?> uploadDocs(String token, long id, MultipartFile agreement, MultipartFile stampDuty,
+			MultipartFile tdsDoc, MultipartFile bankSanction) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			if (!"CRM".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			User user = userRepository.findByEmail(email);
+			LeadDetails leadData = repository.findById(id)
+					.orElseThrow(() -> new UserServiceException(409, "leads data not found for given id" + id));
+			if (leadData != null) {
+				String agreementPath = fileManager.uploadFile(agreement);
+				String stampDutyPath = fileManager.uploadFile(stampDuty);
+				String tdsDocPath = fileManager.uploadFile(tdsDoc);
+				String bankSanctionPath = fileManager.uploadFile(bankSanction);
+
+				leadData.setAgreement(agreementPath);
+				leadData.setStampDuty(stampDutyPath);
+				leadData.setTdsDoc(tdsDocPath);
+				leadData.setBankSanction(bankSanctionPath);
+
+				LeadDetails leadDetails = repository.save(leadData);
+				Client client = clientRepository.findByEmail(leadData.getLeadEmail());
+				if (client != null) {
+					sendNotificationToClient(client,
+							"Documents uploaded by " + user.getName() + " (" + user.getRole() + ")" + " please check");
+
+					String clientEmail = client.getEmail();
+					String subject = "Property Documents Uploaded for Review";
+					String message = "Dear " + client.getName() + ",<br><br>"
+							+ "The following property documents have been uploaded by " + user.getName() + " ("
+							+ user.getRole() + "). Please review them:<br><br>" + "<ul>" + "<li><b>Agreement:</b> "
+							+ extractFileName(leadDetails.getAgreement()) + " - <a href='" + leadDetails.getAgreement()
+							+ "'>Download</a></li>" + "<li><b>Stamp Duty:</b> "
+							+ extractFileName(leadDetails.getStampDuty()) + " - <a href='" + leadDetails.getStampDuty()
+							+ "'>Download</a></li>" + "<li><b>TDS Document:</b> "
+							+ extractFileName(leadDetails.getTdsDoc()) + " - <a href='" + leadDetails.getTdsDoc()
+							+ "'>Download</a></li>" + "<li><b>Bank Sanction:</b> "
+							+ extractFileName(leadDetails.getBankSanction()) + " - <a href='" + leadDetails.getBankSanction()
+							+ "'>Download</a></li>" + "</ul>" + "<br>Best regards,<br>CRM Team";
+
+					mailService.sendEmail(clientEmail, subject, message);
+				}
+			}
+			return ResponseEntity.ok(leadData);
+		}
+		catch (UserServiceException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("lead not found: " + e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
 		}
 	}
 }
