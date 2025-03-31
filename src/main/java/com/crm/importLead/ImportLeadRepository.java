@@ -36,5 +36,7 @@ public interface ImportLeadRepository extends JpaRepository<ImportLead, Long> {
 	List<ImportLead> findByStatus(Status status);
 
 	boolean existsByEmailAndCity(String email, String city);
+	
+	List<ImportLead> findByStatusAndConvertedClient(Status status, boolean convertedClient);
 
 }

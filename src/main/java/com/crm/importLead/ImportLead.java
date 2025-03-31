@@ -52,6 +52,7 @@ public class ImportLead {
 	private String dynamicFieldsJson;
 
 	private String leadStatus;
+	private boolean convertedClient;
 
 	@Transient
 	private List<Map<String, String>> conversationLogs = new ArrayList<>();
@@ -207,6 +208,14 @@ public class ImportLead {
 		this.dynamicFieldsJson = dynamicFieldsJson;
 	}
 
+	public boolean isConvertedClient() {
+		return convertedClient;
+	}
+
+	public void setConvertedClient(boolean convertedClient) {
+		this.convertedClient = convertedClient;
+	}
+
 	public String getDynamicFieldsJson() {
 		return dynamicFieldsJson;
 	}
@@ -222,7 +231,8 @@ public class ImportLead {
 	public ImportLead(long id, String name, String email, String mobileNumber, long date, long userId, long assignedTo,
 			Status status, String adName, String adSet, String campaign, String city, String callTime,
 			String propertyRange, String jsonData, long importedOn, String salesPerson, String dynamicFieldsJson,
-			String leadStatus, List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields) {
+			String leadStatus, List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields,
+			boolean convertedClient) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -245,6 +255,7 @@ public class ImportLead {
 		this.leadStatus = leadStatus;
 		this.conversationLogs = conversationLogs;
 		this.dynamicFields = dynamicFields;
+		this.convertedClient = convertedClient;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -312,8 +323,8 @@ public class ImportLead {
 				+ ", adName=" + adName + ", adSet=" + adSet + ", campaign=" + campaign + ", city=" + city
 				+ ", callTime=" + callTime + ", propertyRange=" + propertyRange + ", jsonData=" + jsonData
 				+ ", importedOn=" + importedOn + ", salesPerson=" + salesPerson + ", dynamicFieldsJson="
-				+ dynamicFieldsJson + ", leadStatus=" + leadStatus + ", conversationLogs=" + conversationLogs
-				+ ", dynamicFields=" + dynamicFields + "]";
+				+ dynamicFieldsJson + ", leadStatus=" + leadStatus + ", convertedClient=" + convertedClient
+				+ ", conversationLogs=" + conversationLogs + ", dynamicFields=" + dynamicFields + "]";
 	}
 
 }

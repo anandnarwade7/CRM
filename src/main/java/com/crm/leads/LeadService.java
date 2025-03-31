@@ -292,6 +292,7 @@ public class LeadService {
 
 				leadsToSave.add(client);
 				processedCount++;
+				lead.setConvertedClient(true);
 			}
 
 			repository.saveAll(leadsToSave);

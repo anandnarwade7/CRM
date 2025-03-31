@@ -1,5 +1,7 @@
 package com.crm.user;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,5 +23,7 @@ public interface AdminsRepository extends JpaRepository<Admins, Long> {
 
 	@Query("SELECT COUNT(u) FROM User u WHERE u.role = :role")
 	long adminsCountByRole(@Param("role") String role);
+
+	List<Admins> getByRole(String string);
 
 }

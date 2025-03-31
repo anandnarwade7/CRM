@@ -115,7 +115,7 @@ public class UserController {
 
 	@PutMapping("/updateUser/{adminId}/{response}")
 	public ResponseEntity<?> updateUserAsBlockUnBlock(@CookieValue(value = "token", required = true) String token,
-			@PathVariable long adminId, @PathVariable String response,
+			@PathVariable long adminId, @PathVariable Status response,
 			@RequestParam(name = "note", required = false) String note) {
 		try {
 			return service.updateUserAsBlockUnBlock(token, adminId, response, note);
@@ -124,11 +124,11 @@ public class UserController {
 					"Invalid User Credentials", System.currentTimeMillis()));
 		}
 	}
-	
+
 	@PutMapping("/updateadmin/{superadminId}/{response}")
-	public ResponseEntity<?> updateAdminAsBlockUnBlockBySuperAdmin(@CookieValue(value = "token", required = true) String token,
-			@PathVariable long superadminId, @PathVariable Status response,
-			@RequestParam(name = "note", required = false) String note) {
+	public ResponseEntity<?> updateAdminAsBlockUnBlockBySuperAdmin(
+			@CookieValue(value = "token", required = true) String token, @PathVariable long superadminId,
+			@PathVariable Status response, @RequestParam(name = "note", required = false) String note) {
 		try {
 			return service.updateAdminAsBlockUnBlockBySuperAdmin(token, superadminId, response, note);
 		} catch (UserServiceException e) {
@@ -206,6 +206,17 @@ public class UserController {
 		try {
 			System.out.println("In add admin api");
 			return service.addClient(token, id, userJson);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to add data", System.currentTimeMillis()));
+		}
+	}
+
+	@PutMapping("/updatedetails/{id}")
+	public ResponseEntity<?> updateUserDetailsAndAdminDetails(@CookieValue(value = "token", required = true) String token, @PathVariable long id,
+			@RequestBody String userJson) {
+		try {
+			return service.updateUserDetailsAndAdminDetails(token, id, userJson);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to add data", System.currentTimeMillis()));

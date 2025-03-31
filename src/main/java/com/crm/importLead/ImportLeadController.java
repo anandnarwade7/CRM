@@ -220,4 +220,17 @@ public class ImportLeadController {
 			leadFile.delete();
 		}
 	}
+
+	@GetMapping("/convertedleads")
+	public ResponseEntity<?> getConvertedLead() {
+		try {
+			return service.getConvertedLead();
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to process request.");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+	}
 }

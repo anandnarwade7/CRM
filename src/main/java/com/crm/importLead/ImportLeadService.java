@@ -157,6 +157,7 @@ public class ImportLeadService {
 				lead.setCity(city);
 				lead.setCallTime(callTime);
 				lead.setPropertyRange(propertyRange);
+				lead.setConvertedClient(false);
 
 				if (hasAdColumns) {
 					lead.setAdName(ad);
@@ -459,7 +460,10 @@ public class ImportLeadService {
 			Map<String, String> logEntry = new HashMap<>();
 			logEntry.put("date", String.valueOf(System.currentTimeMillis()));
 			logEntry.put("comment", comment);
-			logEntry.put("dueDate", comment);
+			if (dueDate != 0) {
+				String due = Long.toString(dueDate);
+				logEntry.put("dueDate", due);
+			}
 
 			logs.add(logEntry);
 			try {
@@ -594,8 +598,17 @@ public class ImportLeadService {
 	public File getConvertedLeads() {
 		try {
 			List<ImportLead> convertedLeads = repository.findByStatus(Status.CONVERTED);
-
 			return generateExcelForLeads(convertedLeads);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Error generating Excel file: " + e.getMessage());
+		}
+	}
+	
+	public ResponseEntity<?> getConvertedLead() {
+		try {
+			List<ImportLead> convertedLeads = repository.findByStatusAndConvertedClient(Status.CONVERTED, false);
+			return ResponseEntity.ok(convertedLeads);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException("Error generating Excel file: " + e.getMessage());

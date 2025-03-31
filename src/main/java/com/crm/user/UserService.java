@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import com.crm.Exception.Error;
 import com.crm.importLead.ImportLeadRepository;
@@ -82,6 +84,7 @@ public class UserService {
 			responseJson.put("startDate", user.getStartDate());
 			responseJson.put("endDate", user.getEndDate());
 			responseJson.put("createdOn", user.getCreatedOn());
+			responseJson.put("password", user.getPassword());
 			responseJson.put("propertyName", user.getPropertyName());
 			return responseJson.toString();
 
@@ -350,7 +353,7 @@ public class UserService {
 				}
 				System.out.println("User found: " + byEmail);
 
-				if (byEmail.getPassword().equals(userPassword)&& byEmail.getAction()!=Status.BLOCK) {
+				if (byEmail.getPassword().equals(userPassword) && byEmail.getAction() != Status.BLOCK) {
 					return createResponse(response, byEmail.getEmail(), byEmail.getRole());
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
@@ -549,7 +552,7 @@ public class UserService {
 		}
 	}
 
-	public ResponseEntity<?> updateUserAsBlockUnBlock(String token, long userId, String response, String note) {
+	public ResponseEntity<?> updateUserAsBlockUnBlock(String token, long userId, Status response, String note) {
 		try {
 			System.out.println("Check 1");
 
@@ -571,12 +574,7 @@ public class UserService {
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			if ("unblock".equalsIgnoreCase(response)) {
-				dbUser.setAction(Status.UNBLOCK);
-			} else if ("block".equalsIgnoreCase(response)) {
-				dbUser.setAction(Status.BLOCK);
-			}
-
+			dbUser.setAction(Status.UNBLOCK);
 			User existingUser = repository.save(dbUser);
 			String userObject = getUserObject(existingUser);
 			return ResponseEntity.ok(userObject);
@@ -848,12 +846,15 @@ public class UserService {
 			long totalLeads = leadRepository.count();
 
 			Map<String, Object> responseMap = new HashMap<>();
-			responseMap.put("sales", salesCount);
-			responseMap.put("crm", crmCount);
-			responseMap.put("leads", totalLeads);
+			if ("ADMIN".equalsIgnoreCase(userRole)) {
+				responseMap.put("sales", salesCount);
+				responseMap.put("crm", crmCount);
+				responseMap.put("leads", totalLeads);
 
-			if ("SUPER ADMIN".equalsIgnoreCase(userRole)) {
-				long adminsCountByRole = adminRepository.adminsCountByRole("ADMIN");
+			} else if ("SUPER ADMIN".equalsIgnoreCase(userRole)) {
+//				adminRepository.adminsCountByRole("ADMIN");
+				List<Admins> admins = adminRepository.getByRole("ADMIN");
+				long adminsCountByRole = admins.size();
 				long sales = repository.findCountByRole("SALES");
 				long crm = repository.findCountByRole("CRM");
 				responseMap.put("admins", adminsCountByRole);
@@ -912,6 +913,56 @@ public class UserService {
 			client.setRole("CLIENT");
 			clientRepository.save(client);
 			String userObject = getUserObject1(client.getRole(), email, null);
+			return ResponseEntity.ok(userObject);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to register user", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			throw new UserServiceException(409, "Invalid Credentials ");
+		}
+	}
+
+	public ResponseEntity<?> updateUserDetailsAndAdminDetails(
+			@CookieValue(value = "token", required = true) String token, @PathVariable long id,
+			@RequestBody String userJson) {
+		try {
+			if (token == null || token.trim().isEmpty()) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			System.out.println("Received token: " + token);
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String userRole = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			System.out.println("User Role: " + userRole + ", Email: " + email);
+			if (!"SUPER ADMIN".equalsIgnoreCase(userRole)) {
+				System.err.println("checking token role " + !"SUPER ADMIN".equalsIgnoreCase(userRole));
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			ObjectMapper objectMapper = new ObjectMapper();
+			JsonNode jsonNode = objectMapper.readTree(userJson);
+			String password = jsonNode.get("password").asText();
+			long startDate = jsonNode.get("startDate").asLong();
+			long endDate = jsonNode.get("endDate").asLong();
+
+			Admins admin = adminRepository.findById(id).orElseThrow(
+					() -> new UserServiceException(409, "given credentioals are not presend with user id: " + id));
+			if (admin != null) {
+				admin.setPassword(password);
+				admin.setStartDate(startDate);
+				admin.setEndDate(endDate);
+				adminRepository.save(admin);
+			}
+			String userObject = getUserObject(admin);
 			return ResponseEntity.ok(userObject);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
