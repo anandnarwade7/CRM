@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,7 +28,7 @@ import com.crm.fileHandler.FilesManager;
 import com.crm.user.UserServiceException;
 
 @RestController
-@RequestMapping("/api/eventDetails")
+@RequestMapping("/api/event")
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
 		("http://localhost:5174"), ("http://139.84.136.208 ") })
 public class EventDetailsController {
@@ -45,7 +46,7 @@ public class EventDetailsController {
 	public EventDetailsService eventDetailsService;
 
 	@PostMapping("/addEventDetails/{crManagerId}")
-	public ResponseEntity<?> addEventDetails(@RequestHeader("Authorization") String token,
+	public ResponseEntity<?> addEventDetails(@CookieValue(value="token", required = true) String token,
 			@PathVariable long crManagerId,
 			@RequestParam(value = "statusReport", required = false) MultipartFile statusReport,
 			@RequestParam(value = "architectsLetter", required = false) MultipartFile architectsLetter,
@@ -124,7 +125,17 @@ public class EventDetailsController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body("An unexpected error occurred: " + e.getMessage());
 		}
-
+	}
+	
+	@GetMapping("/getsingleeventdetails/{eventId}/{leadId}")
+	public ResponseEntity<?> getEventDetailsByIdAndLeadId(@PathVariable long eventId,
+			@PathVariable long leadId) {
+		try {
+			return eventDetailsService.getEventDetailsByIdAndLeadId(eventId, leadId);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("An unexpected error occurred: " + e.getMessage());
+		}
 	}
 
 	@GetMapping("/getEventDetails/{crManagerId}")
@@ -151,7 +162,6 @@ public class EventDetailsController {
 
 	@DeleteMapping("/deleteEventById/{eventId}")
 	public ResponseEntity<?> deleteEventById(@PathVariable long eventId) {
-
 		try {
 			return eventDetailsService.deleteDetailsById(eventId);
 		} catch (Exception e) {

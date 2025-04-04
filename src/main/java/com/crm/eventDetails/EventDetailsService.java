@@ -53,12 +53,15 @@ public class EventDetailsService {
 			JsonNode jsonNode = objectMapper.readTree(eventDetails);
 			System.out.println("check the json data :: " + eventDetails);
 			long salesPersonId = jsonNode.get("salesPersonId").asLong();
+			long leadId = jsonNode.get("leadId").asLong();
+//			long clientId = jsonNode.get("clientId").asLong();
 			long flatId = jsonNode.get("flatId").asLong();
 
 			String propertyName = jsonNode.get("propertyName").asText();
+			String eventName = jsonNode.get("eventName").asText();
 			double percentage = jsonNode.get("percentage").asDouble();
-			long basePriceAmount = jsonNode.get("basePriceAmount").asLong();
-			long gstAmount = jsonNode.get("gstAmount").asLong();
+			double basePriceAmount = jsonNode.get("basePriceAmount").asDouble();
+			double gstAmount = jsonNode.get("gstAmount").asDouble();
 			long invoiceDate = jsonNode.get("invoiceDate").asLong();
 			long dueDate = jsonNode.get("dueDate").asLong();
 			long paymentDate = jsonNode.get("paymentDate").asLong();
@@ -67,10 +70,10 @@ public class EventDetailsService {
 			String architectsLetterDoc = filesManager.uploadFile(architectsLetter, "architectsLetter");
 			String invoiceDoc = filesManager.uploadFile(invoice, "invoice");
 			String receiptDoc = filesManager.uploadFile(receipt, "receipt");
-
-			EventDetails eventDetailsObj = new EventDetails(crManagerId, salesPersonId, flatId, propertyName,
-					percentage, basePriceAmount, gstAmount, paidByName, eventDetails, propertyName, invoiceDate,
-					dueDate, paymentDate, paidByName, paidByName, Status.SUBMITTED);
+			// clientId= 0 (set in following constructor)
+			EventDetails eventDetailsObj = new EventDetails(crManagerId, salesPersonId, leadId, 0, flatId, propertyName,
+					eventName, percentage, basePriceAmount, gstAmount, paidByName, eventDetails, propertyName,
+					invoiceDate, dueDate, paymentDate, paidByName, paidByName, Status.SUBMITTED);
 			System.out.println("check URL :: " + statusReportDoc);
 			eventDetailsObj.setStatusReport(statusReportDoc);
 			eventDetailsObj.setArchitectsLetter(architectsLetterDoc);
@@ -258,6 +261,40 @@ public class EventDetailsService {
 		try {
 			EventDetails deleteByEventId = detailsRepository.deleteByEventId(eventId);
 			return ResponseEntity.ok(deleteByEventId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("Lead not found: " + e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
+		}
+	}
+
+	public ResponseEntity<?> getEventDetailsByIdAndLeadId(long eventId, long leadId) {
+		try {
+			EventDetails byIdAndCrManagerId = detailsRepository.getEventDetailsByEventIdAndLeadId(eventId, leadId);
+			Map<String, Object> responseMap = new HashMap<>();
+			responseMap.put("eventId", byIdAndCrManagerId.getEventId());
+			responseMap.put("crManagerId", byIdAndCrManagerId.getCrManagerId());
+			responseMap.put("salesPersonId", byIdAndCrManagerId.getSalesPersonId());
+			responseMap.put("flatId", byIdAndCrManagerId.getFlatId());
+			responseMap.put("propertyName", byIdAndCrManagerId.getPropertyName());
+			responseMap.put("percentage", byIdAndCrManagerId.getPercentage());
+			responseMap.put("basePriceAmount", byIdAndCrManagerId.getBasePriceAmount());
+			responseMap.put("gstAmount", byIdAndCrManagerId.getGstAmount());
+			responseMap.put("invoiceDate", byIdAndCrManagerId.getInvoiceDate());
+			responseMap.put("dueDate", byIdAndCrManagerId.getDueDate());
+			responseMap.put("paymentDate", byIdAndCrManagerId.getPaymentDate());
+			responseMap.put("paidByName", byIdAndCrManagerId.getPaidByName());
+			responseMap.put("eventDetailsStatus", byIdAndCrManagerId.getEventDetailsStatus());
+			responseMap.put("createdOn", byIdAndCrManagerId.getCreatedOn());
+			responseMap.put("editedOn", byIdAndCrManagerId.getEditedOn());
+			responseMap.put("statusReport", buildFileResponse(byIdAndCrManagerId.getStatusReport()));
+			responseMap.put("architectsLetter", buildFileResponse(byIdAndCrManagerId.getArchitectsLetter()));
+			responseMap.put("invoice", buildFileResponse(byIdAndCrManagerId.getInvoice()));
+			responseMap.put("receipt", buildFileResponse(byIdAndCrManagerId.getReceipt()));
+
+			return ResponseEntity.ok(responseMap);
+
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("Lead not found: " + e.getMessage());
 		} catch (Exception e) {

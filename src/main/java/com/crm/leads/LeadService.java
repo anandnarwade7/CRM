@@ -278,6 +278,7 @@ public class LeadService {
 				client.setCity(lead.getCity());
 				client.setMassagesJsonData(lead.getJsonData());
 				client.setDynamicFieldsJson(lead.getDynamicFieldsJson());
+				client.setSalesId(lead.getId());
 
 				Long assignedUserId = assignedLeadCounts.entrySet().stream().min(Map.Entry.comparingByValue())
 						.map(Map.Entry::getKey).orElse(null);
@@ -428,7 +429,7 @@ public class LeadService {
 		}
 	}
 
-	public ResponseEntity<?> importdClients(String token, int page, Status status) {
+	public ResponseEntity<?> importedClients(String token, int page, Status status) {
 		try {
 			if (token == null) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
@@ -446,20 +447,30 @@ public class LeadService {
 
 			System.out.println("User Role: " + userRole + ", Email: " + email);
 
-			if (!"SUPER ADMIN".equalsIgnoreCase(userRole) && !"ADMIN".equalsIgnoreCase(userRole)) {
+			if (!"CRM".equalsIgnoreCase(userRole) && !"ADMIN".equalsIgnoreCase(userRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
+			User user = userRepository.findByEmail(email);
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
+			}
+			
 			Admins admin = adminRepository.findByEmail(email);
 			if (admin == null) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found for email: " + email);
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
 			}
 
 			Pageable pageable = PageRequest.of(page - 1, 10);
 			Page<LeadDetails> unassignedLeads = null;
 			System.out.println("Status comming :: " + status);
-			unassignedLeads = repository.findByStatusAndUserIdOrderByCreateOnDesc(status, admin.getId(), pageable);
+			if (userRole=="CRM") {
+				unassignedLeads = repository.findByStatusAndAssignedToOrderByCreateOnDesc(status, user.getId(), pageable);
+			}else {
+				unassignedLeads= repository.findByStatusOrderByCreateOnDesc(status, pageable);
+			}
+			
 			System.out.println("Leads found :: " + unassignedLeads.getContent().size());
 
 			if (unassignedLeads.isEmpty()) {
@@ -732,6 +743,38 @@ public class LeadService {
 			return ResponseEntity.ok(leadData);
 		}
 		catch (UserServiceException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("lead not found: " + e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
+		}
+	}
+	
+	public ResponseEntity<?> getDataOfClientByCliectEmailToViewAndDownload(String token, long id, int page) {
+		try {
+			if (token == null) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			if (!"CLIENT".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			Client user = clientRepository.findByEmail(email);
+			Pageable pageable = PageRequest.of(page - 1, 20);
+			Page<LeadDetails> details = repository.findAllDataOfClientByLeadEmailOrderByCreateOnDesc(user.getEmail(), pageable);
+			return ResponseEntity.ok(details);
+		} catch (UserServiceException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("lead not found: " + e.getMessage());
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)

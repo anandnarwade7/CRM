@@ -20,13 +20,16 @@ public class EventDetails {
 
 	private long crManagerId;
 	private long salesPersonId;
+	private long leadId;
+	private long clientId;
 
 	private long flatId;
 
 	private String propertyName;
+	private String eventName;
 
 	private double percentage;
-	private long basePriceAmount;
+	private double basePriceAmount;
 
 	private double gstAmount;
 
@@ -102,11 +105,11 @@ public class EventDetails {
 		this.percentage = percentage;
 	}
 
-	public long getBasePriceAmount() {
+	public double getBasePriceAmount() {
 		return basePriceAmount;
 	}
 
-	public void setBasePriceAmount(long basePriceAmount) {
+	public void setBasePriceAmount(double basePriceAmount) {
 		this.basePriceAmount = basePriceAmount;
 	}
 
@@ -206,22 +209,50 @@ public class EventDetails {
 		this.editedOn = editedOn;
 	}
 
+	public long getLeadId() {
+		return leadId;
+	}
+
+	public long getClientId() {
+		return clientId;
+	}
+
+	public String getEventName() {
+		return eventName;
+	}
+
+	public void setLeadId(long leadId) {
+		this.leadId = leadId;
+	}
+
+	public void setClientId(long clientId) {
+		this.clientId = clientId;
+	}
+
+	public void setEventName(String eventName) {
+		this.eventName = eventName;
+	}
+
 	@PrePersist
 	protected void prePersist() {
 		this.createdOn = System.currentTimeMillis();
 		this.editedOn = System.currentTimeMillis();
 	}
 
-	public EventDetails(long eventId, long crManagerId, long salesPersonId, long flatId, String propertyName,
-			double percentage, long basePriceAmount, double gstAmount, String statusReport, String architectsLetter,
-			String invoice, long invoiceDate, long dueDate, long paymentDate, String paidByName, String receipt,
-			Status eventDetailsStatus, long createdOn, long editedOn) {
+	public EventDetails(long eventId, long crManagerId, long salesPersonId, long leadId, long clientId, long flatId,
+			String propertyName, String eventName, double percentage, double basePriceAmount, double gstAmount,
+			String statusReport, String architectsLetter, String invoice, long invoiceDate, long dueDate,
+			long paymentDate, String paidByName, String receipt, Status eventDetailsStatus, long createdOn,
+			long editedOn) {
 		super();
 		this.eventId = eventId;
 		this.crManagerId = crManagerId;
 		this.salesPersonId = salesPersonId;
+		this.leadId = leadId;
+		this.clientId = clientId;
 		this.flatId = flatId;
 		this.propertyName = propertyName;
+		this.eventName = eventName;
 		this.percentage = percentage;
 		this.basePriceAmount = basePriceAmount;
 		this.gstAmount = gstAmount;
@@ -238,15 +269,18 @@ public class EventDetails {
 		this.editedOn = editedOn;
 	}
 
-	public EventDetails(long crManagerId, long salesPersonId, long flatId, String propertyName, double percentage,
-			long basePriceAmount, double gstAmount, String statusReport, String architectsLetter, String invoice,
-			long invoiceDate, long dueDate, long paymentDate, String paidByName, String receipt,
-			Status eventDetailsStatus) {
+	public EventDetails(long crManagerId, long salesPersonId, long leadId, long clientId, long flatId,
+			String propertyName, String eventName, double percentage, double basePriceAmount, double gstAmount,
+			String statusReport, String architectsLetter, String invoice, long invoiceDate, long dueDate,
+			long paymentDate, String paidByName, String receipt, Status eventDetailsStatus) {
 		super();
 		this.crManagerId = crManagerId;
 		this.salesPersonId = salesPersonId;
+		this.leadId = leadId;
+		this.clientId = clientId;
 		this.flatId = flatId;
 		this.propertyName = propertyName;
+		this.eventName = eventName;
 		this.percentage = percentage;
 		this.basePriceAmount = basePriceAmount;
 		this.gstAmount = gstAmount;
@@ -268,12 +302,12 @@ public class EventDetails {
 	@Override
 	public String toString() {
 		return "EventDetails [eventId=" + eventId + ", crManagerId=" + crManagerId + ", salesPersonId=" + salesPersonId
-				+ ", flatId=" + flatId + ", propertyName=" + propertyName + ", percentage=" + percentage
-				+ ", basePriceAmount=" + basePriceAmount + ", gstAmount=" + gstAmount + ", statusReport=" + statusReport
+				+ ", leadId=" + leadId + ", clientId=" + clientId + ", flatId=" + flatId + ", propertyName="
+				+ propertyName + ", eventName=" + eventName + ", percentage=" + percentage + ", basePriceAmount="
+				+ basePriceAmount + ", gstAmount=" + gstAmount + ", statusReport=" + statusReport
 				+ ", architectsLetter=" + architectsLetter + ", invoice=" + invoice + ", invoiceDate=" + invoiceDate
 				+ ", dueDate=" + dueDate + ", paymentDate=" + paymentDate + ", paidByName=" + paidByName + ", receipt="
 				+ receipt + ", eventDetailsStatus=" + eventDetailsStatus + ", createdOn=" + createdOn + ", editedOn="
 				+ editedOn + "]";
 	}
-
 }

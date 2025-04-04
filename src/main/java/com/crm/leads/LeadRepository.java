@@ -33,4 +33,12 @@ public interface LeadRepository  extends JpaRepository<LeadDetails, Long>{
 
 	long countLeadsByAssignedTo(long id);
 
+	Page<LeadDetails> findByStatusAndAssignedToOrderByCreateOnDesc(Status status, long id, Pageable pageable);
+
+	Page<LeadDetails> findByStatusOrderByCreateOnDesc(Status status, Pageable pageable);
+
+//	List<LeadDetails> findAllDataOfClientByLeadEmail(String email);
+
+	Page<LeadDetails> findAllDataOfClientByLeadEmailOrderByCreateOnDesc(String email, Pageable pageable);
+
 }

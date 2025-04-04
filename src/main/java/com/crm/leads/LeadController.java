@@ -38,7 +38,7 @@ public class LeadController {
 
 	@Autowired
 	private FilesManager filesManager;
-	
+
 	private String serverDocsUrl = "D:\\Files\\MediaData\\";
 //	private String serverDocsUrl = "/root/mediadata/Docs/";
 
@@ -76,10 +76,10 @@ public class LeadController {
 	}
 
 	@GetMapping("/listbystatus")
-	public ResponseEntity<?> importdClients(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> importedClients(@CookieValue(value = "token", required = true) String token,
 			@RequestParam int page, @RequestParam Status status) {
 		try {
-			return leadService.importdClients(token, page, status);
+			return leadService.importedClients(token, page, status);
 		} catch (UserServiceException e) {
 			return ResponseEntity.badRequest().body("Unable to load data.");
 		} catch (Exception e) {
@@ -102,7 +102,7 @@ public class LeadController {
 			if (mimeType == null) {
 				mimeType = "application/octet-stream";
 			}
-			return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fname + "\"")
+			return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fname + "\"")
 					.contentType(MediaType.parseMediaType(mimeType)).body(file);
 
 		} catch (IOException e) {
@@ -161,6 +161,19 @@ public class LeadController {
 			@RequestParam(value = "bankSanction") MultipartFile bankSanction) {
 		try {
 			return leadService.uploadDocs(token, id, agreement, stampDuty, tdsDoc, bankSanction);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to process the request.");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@GetMapping("/get/client/data/{id}/{page}")
+	public ResponseEntity<?> getDataOfClientByCliectEmailToViewAndDownload(@CookieValue String token,
+			@PathVariable long id, @PathVariable int page) {
+		try {
+			return leadService.getDataOfClientByCliectEmailToViewAndDownload(token, id, page);
 		} catch (UserServiceException e) {
 			return ResponseEntity.badRequest().body("Unable to process the request.");
 		} catch (Exception e) {

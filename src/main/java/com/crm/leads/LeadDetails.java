@@ -46,13 +46,13 @@ public class LeadDetails {
 	private String massagesJsonData;
 	@Column(name = "dynamicFields", nullable = true, length = 2000)
 	private String dynamicFieldsJson;
-
 	private String agreement;
 	private String stampDuty;
 	private String tdsDoc;
 	private String bankSanction;
 	private String action;
 	private long createOn;
+	private long salesId;
 
 	@Transient
 	private List<Map<String, String>> conversationLogs = new ArrayList<>();
@@ -322,11 +322,19 @@ public class LeadDetails {
 		this.bankSanction = bankSanction;
 	}
 
+	public long getSalesId() {
+		return salesId;
+	}
+
+	public void setSalesId(long salesId) {
+		this.salesId = salesId;
+	}
+
 	public LeadDetails(long id, String leadName, String leadEmail, String leadmobile, long date, long userId,
 			long assignedTo, Status status, String adName, String adSet, String campaign, String city, String callTime,
 			String propertyRange, String crPerson, String massagesJsonData, String dynamicFieldsJson, String agreement,
 			String stampDuty, String tdsDoc, String bankSanction, String action, long createOn,
-			List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields) {
+			List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields, long salesId) {
 		this.id = id;
 		this.leadName = leadName;
 		this.leadEmail = leadEmail;
@@ -352,6 +360,7 @@ public class LeadDetails {
 		this.createOn = createOn;
 		this.conversationLogs = conversationLogs;
 		this.dynamicFields = dynamicFields;
+		this.salesId = salesId;
 	}
 
 	@Override
@@ -362,8 +371,7 @@ public class LeadDetails {
 				+ ", callTime=" + callTime + ", propertyRange=" + propertyRange + ", crPerson=" + crPerson
 				+ ", massagesJsonData=" + massagesJsonData + ", dynamicFieldsJson=" + dynamicFieldsJson + ", agreement="
 				+ agreement + ", stampDuty=" + stampDuty + ", tdsDoc=" + tdsDoc + ", bankSanction=" + bankSanction
-				+ ", action=" + action + ", createOn=" + createOn + ", conversationLogs=" + conversationLogs
-				+ ", dynamicFields=" + dynamicFields + "]";
+				+ ", action=" + action + ", createOn=" + createOn + ", salesId=" + salesId + ", conversationLogs="
+				+ conversationLogs + ", dynamicFields=" + dynamicFields + "]";
 	}
-
 }
