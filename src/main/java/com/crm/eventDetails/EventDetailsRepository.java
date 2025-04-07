@@ -16,4 +16,8 @@ public interface EventDetailsRepository extends JpaRepository<EventDetails, Long
 
 	EventDetails getEventDetailsByEventIdAndLeadId(long eventId, long leadId);
 
+	List<EventDetails> findByLeadId(long leadId);
+
+	EventDetails deleteAllByClientId(long clientId);
+
 }

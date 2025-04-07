@@ -190,6 +190,8 @@ public class EventDetailsService {
 			responseMap.put("eventId", byIdAndCrManagerId.getEventId());
 			responseMap.put("crManagerId", byIdAndCrManagerId.getCrManagerId());
 			responseMap.put("salesPersonId", byIdAndCrManagerId.getSalesPersonId());
+			responseMap.put("leadId", byIdAndCrManagerId.getLeadId());
+			responseMap.put("eventName", byIdAndCrManagerId.getEventName());
 			responseMap.put("flatId", byIdAndCrManagerId.getFlatId());
 			responseMap.put("propertyName", byIdAndCrManagerId.getPropertyName());
 			responseMap.put("percentage", byIdAndCrManagerId.getPercentage());
@@ -228,6 +230,8 @@ public class EventDetailsService {
 				responseMap.put("eventId", byCrManagerId.getEventId());
 				responseMap.put("crManagerId", byCrManagerId.getCrManagerId());
 				responseMap.put("salesPersonId", byCrManagerId.getSalesPersonId());
+				responseMap.put("leadId", byCrManagerId.getLeadId());
+				responseMap.put("eventName", byCrManagerId.getEventName());
 				responseMap.put("flatId", byCrManagerId.getFlatId());
 				responseMap.put("propertyName", byCrManagerId.getPropertyName());
 				responseMap.put("percentage", byCrManagerId.getPercentage());
@@ -257,6 +261,63 @@ public class EventDetailsService {
 		}
 	}
 
+	
+	public ResponseEntity<?> getEventDetailsByLeadId(String token, long leadId) {
+		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				System.out.println("Jwt expiration checking");
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String role = jwtUtil.extractRole(token);
+
+			if (!"CRM".equalsIgnoreCase(role) && !"CLIENT".equalsIgnoreCase(role)) {
+				System.out.println("role checking ");
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			List<EventDetails> byCrManagerIdFromDb = detailsRepository.findByLeadId(leadId);
+
+			List<Map<String, Object>> responseList = new ArrayList<>();
+
+			for (EventDetails byCrManagerId : byCrManagerIdFromDb) {
+				Map<String, Object> responseMap = new HashMap<>();
+				responseMap.put("eventId", byCrManagerId.getEventId());
+				responseMap.put("crManagerId", byCrManagerId.getCrManagerId());
+				responseMap.put("salesPersonId", byCrManagerId.getSalesPersonId());
+				responseMap.put("leadId", byCrManagerId.getLeadId());
+				responseMap.put("eventName", byCrManagerId.getEventName());
+				responseMap.put("flatId", byCrManagerId.getFlatId());
+				responseMap.put("propertyName", byCrManagerId.getPropertyName());
+				responseMap.put("percentage", byCrManagerId.getPercentage());
+				responseMap.put("basePriceAmount", byCrManagerId.getBasePriceAmount());
+				responseMap.put("gstAmount", byCrManagerId.getGstAmount());
+				responseMap.put("invoiceDate", byCrManagerId.getInvoiceDate());
+				responseMap.put("dueDate", byCrManagerId.getDueDate());
+				responseMap.put("paymentDate", byCrManagerId.getPaymentDate());
+				responseMap.put("paidByName", byCrManagerId.getPaidByName());
+				responseMap.put("eventDetailsStatus", byCrManagerId.getEventDetailsStatus());
+				responseMap.put("createdOn", byCrManagerId.getCreatedOn());
+				responseMap.put("editedOn", byCrManagerId.getEditedOn());
+				responseMap.put("statusReport", buildFileResponse(byCrManagerId.getStatusReport()));
+				responseMap.put("architectsLetter", buildFileResponse(byCrManagerId.getArchitectsLetter()));
+				responseMap.put("invoice", buildFileResponse(byCrManagerId.getInvoice()));
+				responseMap.put("receipt", buildFileResponse(byCrManagerId.getReceipt()));
+				responseList.add(responseMap);
+			}
+
+			return ResponseEntity.ok(responseList);
+
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("Lead not found: " + e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
+		}
+	}
+	
+	
 	public ResponseEntity<?> deleteDetailsById(long eventId) {
 		try {
 			EventDetails deleteByEventId = detailsRepository.deleteByEventId(eventId);
@@ -276,6 +337,8 @@ public class EventDetailsService {
 			responseMap.put("eventId", byIdAndCrManagerId.getEventId());
 			responseMap.put("crManagerId", byIdAndCrManagerId.getCrManagerId());
 			responseMap.put("salesPersonId", byIdAndCrManagerId.getSalesPersonId());
+			responseMap.put("leadId", byIdAndCrManagerId.getLeadId());
+			responseMap.put("eventName", byIdAndCrManagerId.getEventName());
 			responseMap.put("flatId", byIdAndCrManagerId.getFlatId());
 			responseMap.put("propertyName", byIdAndCrManagerId.getPropertyName());
 			responseMap.put("percentage", byIdAndCrManagerId.getPercentage());
@@ -295,6 +358,18 @@ public class EventDetailsService {
 
 			return ResponseEntity.ok(responseMap);
 
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("Lead not found: " + e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
+		}
+	}
+	
+	public ResponseEntity<?> deleteAllEventByClient(long clientId) {
+		try {
+			EventDetails deleteByEventId = detailsRepository.deleteAllByClientId(clientId);
+			return ResponseEntity.ok(deleteByEventId);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("Lead not found: " + e.getMessage());
 		} catch (Exception e) {

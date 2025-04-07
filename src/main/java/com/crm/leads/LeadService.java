@@ -72,7 +72,7 @@ public class LeadService {
 
 	@Autowired
 	private AdminsRepository adminRepository;
-	
+
 	@Autowired
 	private MailService mailService;
 
@@ -435,42 +435,40 @@ public class LeadService {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: No token provided.");
 			}
-
 			if (jwtUtil.isTokenExpired(token)) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: Your session has expired.");
 			}
-
 			Map<String, String> userClaims = jwtUtil.extractRole1(token);
 			String userRole = userClaims.get("role");
 			String email = userClaims.get("email");
 
 			System.out.println("User Role: " + userRole + ", Email: " + email);
 
+			Pageable pageable = PageRequest.of(page - 1, 10);
+			Page<LeadDetails> unassignedLeads = null;
+
 			if (!"CRM".equalsIgnoreCase(userRole) && !"ADMIN".equalsIgnoreCase(userRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			User user = userRepository.findByEmail(email);
-			if (user == null) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
-			}
-			
-			Admins admin = adminRepository.findByEmail(email);
-			if (admin == null) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
+			if (userRole == "CRM") {
+				User user = userRepository.findByEmail(email);
+				if (user == null) {
+					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
+				}
+				System.out.println("Status comming :: " + status);
+				unassignedLeads = repository.findByStatusAndAssignedToOrderByCreateOnDesc(status, user.getId(),
+						pageable);
+			} else if (userRole == "ADMIN") {
+				Admins admin = adminRepository.findByEmail(email);
+				if (admin == null) {
+					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
+				}
+				unassignedLeads = repository.findByStatusOrderByCreateOnDesc(status, pageable);
 			}
 
-			Pageable pageable = PageRequest.of(page - 1, 10);
-			Page<LeadDetails> unassignedLeads = null;
-			System.out.println("Status comming :: " + status);
-			if (userRole=="CRM") {
-				unassignedLeads = repository.findByStatusAndAssignedToOrderByCreateOnDesc(status, user.getId(), pageable);
-			}else {
-				unassignedLeads= repository.findByStatusOrderByCreateOnDesc(status, pageable);
-			}
-			
 			System.out.println("Leads found :: " + unassignedLeads.getContent().size());
 
 			if (unassignedLeads.isEmpty()) {
@@ -678,7 +676,7 @@ public class LeadService {
 	}
 
 	private String extractFileName(String fileUrl) {
-		return fileUrl.substring(fileUrl.lastIndexOf("=") + 1).replaceAll("^[0-9]+", ""); 
+		return fileUrl.substring(fileUrl.lastIndexOf("=") + 1).replaceAll("^[0-9]+", "");
 	}
 
 	public ResponseEntity<?> uploadDocs(String token, long id, MultipartFile agreement, MultipartFile stampDuty,
@@ -734,22 +732,22 @@ public class LeadService {
 							+ "'>Download</a></li>" + "<li><b>TDS Document:</b> "
 							+ extractFileName(leadDetails.getTdsDoc()) + " - <a href='" + leadDetails.getTdsDoc()
 							+ "'>Download</a></li>" + "<li><b>Bank Sanction:</b> "
-							+ extractFileName(leadDetails.getBankSanction()) + " - <a href='" + leadDetails.getBankSanction()
-							+ "'>Download</a></li>" + "</ul>" + "<br>Best regards,<br>CRM Team";
+							+ extractFileName(leadDetails.getBankSanction()) + " - <a href='"
+							+ leadDetails.getBankSanction() + "'>Download</a></li>" + "</ul>"
+							+ "<br>Best regards,<br>CRM Team";
 
 					mailService.sendEmail(clientEmail, subject, message);
 				}
 			}
 			return ResponseEntity.ok(leadData);
-		}
-		catch (UserServiceException e) {
+		} catch (UserServiceException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("lead not found: " + e.getMessage());
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
 					.body("Internal Server Error: " + e.getMessage());
 		}
 	}
-	
+
 	public ResponseEntity<?> getDataOfClientByCliectEmailToViewAndDownload(String token, long id, int page) {
 		try {
 			if (token == null) {
@@ -772,7 +770,8 @@ public class LeadService {
 			}
 			Client user = clientRepository.findByEmail(email);
 			Pageable pageable = PageRequest.of(page - 1, 20);
-			Page<LeadDetails> details = repository.findAllDataOfClientByLeadEmailOrderByCreateOnDesc(user.getEmail(), pageable);
+			Page<LeadDetails> details = repository.findAllDataOfClientByLeadEmailOrderByCreateOnDesc(user.getEmail(),
+					pageable);
 			return ResponseEntity.ok(details);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("lead not found: " + e.getMessage());

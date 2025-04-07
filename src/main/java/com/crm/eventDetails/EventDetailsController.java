@@ -3,7 +3,6 @@ package com.crm.eventDetails;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -17,12 +16,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.Exception.Error;
 import com.crm.fileHandler.FilesManager;
 import com.crm.user.UserServiceException;
@@ -46,7 +43,7 @@ public class EventDetailsController {
 	public EventDetailsService eventDetailsService;
 
 	@PostMapping("/addEventDetails/{crManagerId}")
-	public ResponseEntity<?> addEventDetails(@CookieValue(value="token", required = true) String token,
+	public ResponseEntity<?> addEventDetails(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long crManagerId,
 			@RequestParam(value = "statusReport", required = false) MultipartFile statusReport,
 			@RequestParam(value = "architectsLetter", required = false) MultipartFile architectsLetter,
@@ -100,7 +97,7 @@ public class EventDetailsController {
 	}
 
 	@PutMapping("/updateEvent/{eventId}/{crManagerId}")
-	public ResponseEntity<?> updateEventDetails(@RequestHeader("Authorization") String token,
+	public ResponseEntity<?> updateEventDetails(@CookieValue(value = "token", required = true) String token,
 			@PathVariable long eventId, @PathVariable long crManagerId,
 			@RequestParam(value = "statusReport", required = false) MultipartFile statusReport,
 			@RequestParam(value = "architectsLetter", required = false) MultipartFile architectsLetter,
@@ -126,10 +123,9 @@ public class EventDetailsController {
 					.body("An unexpected error occurred: " + e.getMessage());
 		}
 	}
-	
+
 	@GetMapping("/getsingleeventdetails/{eventId}/{leadId}")
-	public ResponseEntity<?> getEventDetailsByIdAndLeadId(@PathVariable long eventId,
-			@PathVariable long leadId) {
+	public ResponseEntity<?> getEventDetailsByIdAndLeadId(@PathVariable long eventId, @PathVariable long leadId) {
 		try {
 			return eventDetailsService.getEventDetailsByIdAndLeadId(eventId, leadId);
 		} catch (Exception e) {
@@ -142,11 +138,21 @@ public class EventDetailsController {
 	public ResponseEntity<?> getEventDetailsCRManagerId(@PathVariable long crManagerId) {
 		try {
 			return eventDetailsService.getEventDetailsByCRManagerId(crManagerId);
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("An unexpected error occurred: " + e.getMessage());
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
+	}
 
+	@GetMapping("/getalleventdetails/{leadId}")
+	public ResponseEntity<?> getEventDetailsLeadId(@CookieValue(value = "token", required = true) String token,
+			@PathVariable long leadId) {
+		try {
+			return eventDetailsService.getEventDetailsByLeadId(token, leadId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
+		}
 	}
 
 	@GetMapping("/getEventDetails/{eventId}")
@@ -164,9 +170,19 @@ public class EventDetailsController {
 	public ResponseEntity<?> deleteEventById(@PathVariable long eventId) {
 		try {
 			return eventDetailsService.deleteDetailsById(eventId);
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("An unexpected error occurred: " + e.getMessage());
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to delete record data", System.currentTimeMillis()));
+		}
+	}
+
+	@DeleteMapping("/deleteevents/{clientId}")
+	public ResponseEntity<?> deleteAllEventByClient(@PathVariable long clientId) {
+		try {
+			return eventDetailsService.deleteAllEventByClient(clientId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to delete all record data", System.currentTimeMillis()));
 		}
 	}
 
