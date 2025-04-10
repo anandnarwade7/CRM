@@ -163,13 +163,13 @@ public class EventDetailsController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body("An unexpected error occurred: " + e.getMessage());
 		}
-
 	}
 
 	@DeleteMapping("/deleteEventById/{eventId}")
-	public ResponseEntity<?> deleteEventById(@PathVariable long eventId) {
+	public ResponseEntity<?> deleteEventById(@CookieValue(value = "token", required = true) String token,
+			@PathVariable long eventId) {
 		try {
-			return eventDetailsService.deleteDetailsById(eventId);
+			return eventDetailsService.deleteDetailsById(token, eventId);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Unable to delete record data", System.currentTimeMillis()));

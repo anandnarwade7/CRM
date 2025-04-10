@@ -4,12 +4,12 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
@@ -24,7 +24,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.Exception.Error;
 import com.crm.fileHandler.FilesManager;
 import com.crm.importLead.ImportLead;
@@ -44,7 +43,6 @@ import com.crm.user.UserServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -232,7 +230,12 @@ public class LeadService {
 						.body("Unauthorized: Your session has expired.");
 			}
 
-			String role = jwtUtil.extractRole(token);
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			System.out.println("User Role: " + role + ", Email: " + email);
+			
 			if (!"ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
@@ -241,13 +244,14 @@ public class LeadService {
 			List<LeadDetails> leadsToSave = new ArrayList<>();
 			Map<Long, Long> assignedLeadCounts = new HashMap<>();
 
+			Admins admin = adminRepository.findByEmail(email);
 			if (assignedTo != null && !assignedTo.isEmpty()) {
 				for (Long userIdFromList : assignedTo) {
 					long leadCount = repository.countLeadsByAssignedTo(userIdFromList);
 					assignedLeadCounts.put(userIdFromList, leadCount);
 				}
 			} else {
-				List<User> crmUsers = userRepository.findUsersByRole("CRM");
+				List<User> crmUsers = userRepository.getByRoleAndUserId("CRM", admin.getId());
 				crmUsers.forEach(user -> {
 					long leadCount = repository.countLeadsByAssignedTo(user.getId());
 					assignedLeadCounts.put(user.getId(), leadCount);
@@ -429,16 +433,72 @@ public class LeadService {
 		}
 	}
 
+//	public ResponseEntity<?> importedClients(String token, int page, Status status) {
+//		try {
+//			if (token == null) {
+//				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+//						.body("Unauthorized: No token provided.");
+//			}
+//			if (jwtUtil.isTokenExpired(token)) {
+//				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+//						.body("Unauthorized: Your session has expired.");
+//			}
+//			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+//			String userRole = userClaims.get("role");
+//			String email = userClaims.get("email");
+//
+//			System.out.println("User Role: " + userRole + ", Email: " + email);
+//
+//			Pageable pageable = PageRequest.of(page - 1, 10);
+//			Page<LeadDetails> unassignedLeads = null;
+//
+//			if (!"CRM".equalsIgnoreCase(userRole) && !"ADMIN".equalsIgnoreCase(userRole)) {
+//				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+//						.body("Forbidden: You do not have the necessary permissions.");
+//			}
+//
+//			if (userRole == "CRM") {
+//				User user = userRepository.findByEmail(email);
+//				if (user == null) {
+//					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
+//				}
+//				System.out.println("Status comming :: " + status);
+//				unassignedLeads = repository.findByStatusAndAssignedToOrderByCreateOnDesc(status, user.getId(),
+//						pageable);
+//			} else if (userRole == "ADMIN") {
+//				Admins admin = adminRepository.findByEmail(email);
+//				if (admin == null) {
+//					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
+//				}
+//				unassignedLeads = repository.findByStatusOrderByCreateOnDesc(status, pageable);
+//			}
+//
+//			System.out.println("Leads found :: " + unassignedLeads.getContent().size());
+//
+//			if (unassignedLeads.isEmpty()) {
+//				return ResponseEntity.ok("No clients found");
+//			}
+//			return ResponseEntity.ok(unassignedLeads);
+//		} catch (UserServiceException e) {
+//			return ResponseEntity.status(e.getStatusCode()).body(
+//					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+//		} catch (Exception ex) {
+//			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+//		}
+//	}
+
 	public ResponseEntity<?> importedClients(String token, int page, Status status) {
 		try {
-			if (token == null) {
+			if (token == null || token.trim().isEmpty()) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: No token provided.");
 			}
+
 			if (jwtUtil.isTokenExpired(token)) {
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: Your session has expired.");
 			}
+
 			Map<String, String> userClaims = jwtUtil.extractRole1(token);
 			String userRole = userClaims.get("role");
 			String email = userClaims.get("email");
@@ -446,40 +506,42 @@ public class LeadService {
 			System.out.println("User Role: " + userRole + ", Email: " + email);
 
 			Pageable pageable = PageRequest.of(page - 1, 10);
-			Page<LeadDetails> unassignedLeads = null;
+			Page<LeadDetails> leadPage;
 
 			if (!"CRM".equalsIgnoreCase(userRole) && !"ADMIN".equalsIgnoreCase(userRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			if (userRole == "CRM") {
+			if ("CRM".equalsIgnoreCase(userRole)) {
 				User user = userRepository.findByEmail(email);
 				if (user == null) {
-					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
+					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM user not found for email: " + email);
 				}
-				System.out.println("Status comming :: " + status);
-				unassignedLeads = repository.findByStatusAndAssignedToOrderByCreateOnDesc(status, user.getId(),
-						pageable);
-			} else if (userRole == "ADMIN") {
+
+				System.out.println("Fetching leads for CRM user...");
+				leadPage = repository.findByStatusAndAssignedToOrderByCreateOnDesc(status, user.getId(), pageable);
+			} else {
 				Admins admin = adminRepository.findByEmail(email);
 				if (admin == null) {
-					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("CRM not found for email: " + email);
+					return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Admin not found for email: " + email);
 				}
-				unassignedLeads = repository.findByStatusOrderByCreateOnDesc(status, pageable);
+
+				System.out.println("Fetching leads for ADMIN...");
+				leadPage = repository.findByStatusAndUserIdOrderByCreateOnDesc(status, admin.getId(), pageable);
 			}
 
-			System.out.println("Leads found :: " + unassignedLeads.getContent().size());
-
-			if (unassignedLeads.isEmpty()) {
-				return ResponseEntity.ok("No clients found");
+			if (leadPage == null || leadPage.isEmpty()) {
+				return ResponseEntity.ok(Collections.emptyMap());
 			}
-			return ResponseEntity.ok(unassignedLeads);
+
+			return ResponseEntity.ok(leadPage);
+
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
-					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data ", System.currentTimeMillis()));
 		} catch (Exception ex) {
-			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server Error: " + ex.getMessage());
 		}
 	}
 
@@ -549,7 +611,7 @@ public class LeadService {
 
 	@Transactional
 	public ResponseEntity<?> addConversationLogAndDynamicField(Long clientId, Status status, String comment,
-			List<String> key, List<Object> value) {
+			long dueDate, List<String> key, List<Object> value) {
 
 		LeadDetails client = repository.findById(clientId)
 				.orElseThrow(() -> new RuntimeException("Clients not found with ID: " + clientId));
@@ -567,8 +629,12 @@ public class LeadService {
 			for (String line : commentLines) {
 				if (!line.trim().isEmpty()) {
 					Map<String, String> logEntry = new HashMap<>();
-//					logEntry.put("date", formattedDate);
-					logEntry.put("comment", line);
+//					logEntry.put("date", String.valueOf(System.currentTimeMillis()));
+					logEntry.put("comment", comment);
+					if (dueDate != 0) {
+						String due = Long.toString(dueDate);
+						logEntry.put("dueDate", due);
+					}
 					logs.add(logEntry);
 				}
 			}

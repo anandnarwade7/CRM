@@ -39,8 +39,8 @@ public class LeadController {
 	@Autowired
 	private FilesManager filesManager;
 
-	private String serverDocsUrl = "D:\\Files\\MediaData\\";
-//	private String serverDocsUrl = "/root/mediadata/Docs/";
+//	private String serverDocsUrl = "D:\\Files\\MediaData\\";
+	private String serverDocsUrl = "/root/mediadata/Docs/";
 
 	@PostMapping("/upload")
 	public ResponseEntity<?> uploadTemplate(@CookieValue(value = "token", required = true) String token,
@@ -68,7 +68,7 @@ public class LeadController {
 			System.out.println();
 			return leadService.assignConvertedLeads(token, userId, assignedTo, leadIds);
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Uploaded file does not contain any data.");
+			return ResponseEntity.badRequest().body("please specify data properly.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -81,7 +81,8 @@ public class LeadController {
 		try {
 			return leadService.importedClients(token, page, status);
 		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Unable to load data.");
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to fetch data", System.currentTimeMillis()));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -141,10 +142,10 @@ public class LeadController {
 
 	@PostMapping("/updateFields/{leadId}")
 	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) Status status,
-			@RequestParam(required = false) String comment, @RequestParam(required = false) List<String> key,
-			@RequestParam(required = false) List<Object> value) {
+			@RequestParam(required = false) String comment, @RequestParam(required = false) long dueDate,
+			@RequestParam(required = false) List<String> key, @RequestParam(required = false) List<Object> value) {
 		try {
-			return leadService.addConversationLogAndDynamicField(leadId, status, comment, key, value);
+			return leadService.addConversationLogAndDynamicField(leadId, status, comment, dueDate, key, value);
 		} catch (UserServiceException e) {
 			return ResponseEntity.badRequest().body("Unable to process the request.");
 		} catch (Exception e) {

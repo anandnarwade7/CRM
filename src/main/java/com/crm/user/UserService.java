@@ -764,7 +764,7 @@ public class UserService {
 			List<User> users = repository.findByRoleAndUserIdOrderByCreatedOnDesc(role, admin.getId());
 
 			if (users.isEmpty()) {
-				return ResponseEntity.ok("No users found for the role: " + role);
+				return ResponseEntity.ok(users);
 			}
 
 			List<UserDTO> userDTOs = users.stream().map(UserDTO::new).collect(Collectors.toList());

@@ -91,13 +91,23 @@ public class ImportLeadService {
 					.body("Unauthorized: Your session has expired.");
 		}
 
-		String role = jwtUtil.extractRole(token);
+		Map<String, String> userClaims = jwtUtil.extractRole1(token);
+		String role = userClaims.get("role");
+		String adminEmail = userClaims.get("email");
+
+		System.out.println("User Role: " + role + ", Email: " + adminEmail);
 
 		if (!"ADMIN".equalsIgnoreCase(role)) {
 			return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 					.body("Forbidden: You do not have the necessary permissions.");
 		}
 
+		Admins admins = adminRepository.findByEmail(adminEmail);
+		if (admins==null) {
+			return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+					.body("Unable to find admins data.");
+		}
+		
 		try (InputStream inputStream = file.getInputStream(); Workbook workbook = WorkbookFactory.create(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -189,7 +199,7 @@ public class ImportLeadService {
 
 			repository.saveAll(leadsToSave);
 			if (assignedToList.isEmpty()) {
-				assignLeadsToSales();
+				assignLeadsToSales(admins.getId());
 			}
 
 			assignedLeadCounts.forEach((salesUserId, leadCount) -> {
@@ -236,9 +246,9 @@ public class ImportLeadService {
 		}
 	}
 
-	public ResponseEntity<?> assignLeadsToSales() {
+	public ResponseEntity<?> assignLeadsToSales(long id) {
 		try {
-			List<User> salesUsers = userRepository.findUsersByRole("SALES");
+			List<User> salesUsers = userRepository.getByRoleAndUserId("SALES", id);
 			List<ImportLead> unassignedLeads = repository.findLeadsWhereAssignedToIsZero();
 
 			if (salesUsers.isEmpty() || unassignedLeads.isEmpty()) {
@@ -254,6 +264,7 @@ public class ImportLeadService {
 			for (User salesUser : salesUsers) {
 				for (int j = 0; j < leadsPerUser; j++) {
 					unassignedLeads.get(leadIndex).setAssignedTo(salesUser.getId());
+					unassignedLeads.get(leadIndex).setSalesPerson(salesUser.getName());
 					leadIndex++;
 				}
 			}
@@ -604,7 +615,7 @@ public class ImportLeadService {
 			throw new RuntimeException("Error generating Excel file: " + e.getMessage());
 		}
 	}
-	
+
 	public ResponseEntity<?> getConvertedLead() {
 		try {
 			List<ImportLead> convertedLeads = repository.findByStatusAndConvertedClient(Status.CONVERTED, false);
