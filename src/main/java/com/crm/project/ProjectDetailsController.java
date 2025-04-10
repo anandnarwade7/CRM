@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,7 +29,8 @@ public class ProjectDetailsController {
 	private ProjectDetailsService projectDetailsService;
 
 	@PostMapping("/create")
-	public ResponseEntity<?> createProjectDetails(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> createProjectDetails(
+			@RequestHeader(value = "token", required = true) String token,
 			@RequestBody ProjectDetails details, @RequestParam long userId) {
 		try {
 			System.out.println("In controller ");
@@ -47,7 +49,7 @@ public class ProjectDetailsController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve project details.");
 		}
 	}
-	
+
 	@GetMapping("/get/{flatId}")
 	@Transactional
 	public ResponseEntity<?> getFlatById(@PathVariable long flatId) {

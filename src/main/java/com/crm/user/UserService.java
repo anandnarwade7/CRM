@@ -403,12 +403,12 @@ public class UserService {
 		String token = jwtUtil.createToken(email, role);
 		System.out.println("Token Created Successfully :: " + token);
 
-		Cookie cookie = new Cookie("token", token);
-		cookie.setHttpOnly(true);
-		cookie.setSecure(false);
-		cookie.setMaxAge(60 * 60 * 6);
-		cookie.setPath("/");
-		response.addCookie(cookie);
+//		Cookie cookie = new Cookie("token", token);
+//		cookie.setHttpOnly(true);
+//		cookie.setSecure(false);
+//		cookie.setMaxAge(60 * 60 * 6);
+//		cookie.setPath("/");
+//		response.addCookie(cookie);
 
 		String userObjectStr = getUserObject1(role, email, token);
 		return ResponseEntity.ok(userObjectStr);

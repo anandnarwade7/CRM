@@ -9,12 +9,12 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,7 +52,7 @@ public class ImportLeadController {
 //	}
 
 	@PostMapping("/upload-template")
-	public ResponseEntity<?> uploadTemplate(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> uploadTemplate(@RequestHeader(value = "token", required = true) String token,
 			@RequestParam long userId, @RequestParam(required = false) List<Long> assignedTo,
 			@RequestParam("file") MultipartFile file) {
 		if (file.isEmpty()) {
@@ -84,7 +84,7 @@ public class ImportLeadController {
 	}
 
 	@GetMapping("/assigned")
-	public ResponseEntity<?> assignedLeads(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> assignedLeads(@RequestHeader(value = "token", required = true) String token,
 			@RequestParam int page, @RequestParam Status status) {
 		try {
 			return service.assignLeads(token, page, status);
@@ -98,7 +98,7 @@ public class ImportLeadController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getLeadsById/{id}")
-	public ResponseEntity<?> getSales(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> getSales(@RequestHeader(value = "token", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return service.getLeadsById(token, id);
@@ -109,7 +109,7 @@ public class ImportLeadController {
 	}
 
 	@GetMapping("/leads")
-	public ResponseEntity<?> getLeadsBysalesId(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> getLeadsBysalesId(@RequestHeader(value = "token", required = true) String token,
 			@RequestParam long userId, @RequestParam int page) {
 		try {
 			return service.getLeadsBysalesId(token, userId, page);
@@ -175,7 +175,8 @@ public class ImportLeadController {
 	}
 
 	@GetMapping("/getLeadsCount")
-	public ResponseEntity<?> getUsersCountByRole(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> getUsersCountByRole(
+			@RequestHeader(value = "token", required = true) String token,
 			@RequestParam(value = "userId", required = false) Long userId) {
 		try {
 			return service.getTotalCountsOfLeads(token, userId);

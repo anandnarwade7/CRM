@@ -731,7 +731,7 @@ public class LeadService {
 			}
 
 			long assignedLeads = repository.countByAssignedTo(userId);
-			long convertedLeads = repository.countLeadsByUserIdAndStatusNotAssigned(userId, Status.ASSIGNED);
+			long convertedLeads = repository.countLeadsByUserIdAndStatusNotConverted(userId, Status.CONVERTED);
 
 			Map<String, Long> response = Map.of("totalLeads", assignedLeads, "convertedLeads", convertedLeads);
 
@@ -846,4 +846,6 @@ public class LeadService {
 					.body("Internal Server Error: " + e.getMessage());
 		}
 	}
+	
+	
 }

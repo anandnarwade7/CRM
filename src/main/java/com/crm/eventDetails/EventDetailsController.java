@@ -9,13 +9,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,7 +43,7 @@ public class EventDetailsController {
 	public EventDetailsService eventDetailsService;
 
 	@PostMapping("/addEventDetails/{crManagerId}")
-	public ResponseEntity<?> addEventDetails(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> addEventDetails(@RequestHeader(value = "token", required = true) String token,
 			@PathVariable long crManagerId,
 			@RequestParam(value = "statusReport", required = false) MultipartFile statusReport,
 			@RequestParam(value = "architectsLetter", required = false) MultipartFile architectsLetter,
@@ -97,7 +97,7 @@ public class EventDetailsController {
 	}
 
 	@PutMapping("/updateEvent/{eventId}/{crManagerId}")
-	public ResponseEntity<?> updateEventDetails(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> updateEventDetails(@RequestHeader(value = "token", required = true) String token,
 			@PathVariable long eventId, @PathVariable long crManagerId,
 			@RequestParam(value = "statusReport", required = false) MultipartFile statusReport,
 			@RequestParam(value = "architectsLetter", required = false) MultipartFile architectsLetter,
@@ -145,8 +145,8 @@ public class EventDetailsController {
 	}
 
 	@GetMapping("/getalleventdetails/{leadId}")
-	public ResponseEntity<?> getEventDetailsLeadId(@CookieValue(value = "token", required = true) String token,
-			@PathVariable long leadId) {
+	public ResponseEntity<?> getEventDetailsLeadId(
+			@RequestHeader(value = "token", required = true) String token, @PathVariable long leadId) {
 		try {
 			return eventDetailsService.getEventDetailsByLeadId(token, leadId);
 		} catch (UserServiceException e) {
@@ -166,7 +166,8 @@ public class EventDetailsController {
 	}
 
 	@DeleteMapping("/deleteEventById/{eventId}")
-	public ResponseEntity<?> deleteEventById(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> deleteEventById(
+			@RequestHeader(value = "token", required = true) String token,
 			@PathVariable long eventId) {
 		try {
 			return eventDetailsService.deleteDetailsById(token, eventId);

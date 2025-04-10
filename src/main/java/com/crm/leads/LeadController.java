@@ -12,12 +12,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,7 +43,7 @@ public class LeadController {
 	private String serverDocsUrl = "/root/mediadata/Docs/";
 
 	@PostMapping("/upload")
-	public ResponseEntity<?> uploadTemplate(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> uploadTemplate(@RequestHeader(value = "token", required = true) String token,
 			@RequestParam long userId, @RequestParam(required = false) List<Long> assignedTo,
 			@RequestParam("file") MultipartFile file) {
 		if (file.isEmpty()) {
@@ -61,7 +61,7 @@ public class LeadController {
 	}
 
 	@PostMapping("/assign")
-	public ResponseEntity<?> assignConvertedLeads(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> assignConvertedLeads(@RequestHeader(value = "token", required = true) String token,
 			@RequestParam long userId, @RequestParam(required = false) List<Long> assignedTo,
 			@RequestParam(required = false) List<Long> leadIds) {
 		try {
@@ -76,7 +76,7 @@ public class LeadController {
 	}
 
 	@GetMapping("/listbystatus")
-	public ResponseEntity<?> importedClients(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> importedClients(@RequestHeader(value = "token", required = true) String token,
 			@RequestParam int page, @RequestParam Status status) {
 		try {
 			return leadService.importedClients(token, page, status);
@@ -117,7 +117,7 @@ public class LeadController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getById/{id}")
-	public ResponseEntity<?> getLeadById(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> getLeadById(@RequestHeader(value = "token", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return leadService.getClientById(token, id);
@@ -128,7 +128,7 @@ public class LeadController {
 	}
 
 	@GetMapping("/clientsbycr")
-	public ResponseEntity<?> getClientsByCrmId(@CookieValue(value = "token", required = true) String token,
+	public ResponseEntity<?> getClientsByCrmId(@RequestHeader(value = "token", required = true) String token,
 			@RequestParam long userId, @RequestParam int page) {
 		try {
 			return leadService.getClientsByCrmId(token, userId, page);
@@ -155,8 +155,8 @@ public class LeadController {
 	}
 
 	@PutMapping("/uploaddocs/{id}")
-	public ResponseEntity<?> uploadDocs(@CookieValue String token, @PathVariable long id,
-			@RequestParam(value = "agreement") MultipartFile agreement,
+	public ResponseEntity<?> uploadDocs(@RequestHeader(value = "token", required = true) String token,
+			@PathVariable long id, @RequestParam(value = "agreement") MultipartFile agreement,
 			@RequestParam(value = "stampDuty") MultipartFile stampDuty,
 			@RequestParam(value = "tdsDoc") MultipartFile tdsDoc,
 			@RequestParam(value = "bankSanction") MultipartFile bankSanction) {
@@ -171,8 +171,9 @@ public class LeadController {
 	}
 
 	@GetMapping("/get/client/data/{id}/{page}")
-	public ResponseEntity<?> getDataOfClientByCliectEmailToViewAndDownload(@CookieValue String token,
-			@PathVariable long id, @PathVariable int page) {
+	public ResponseEntity<?> getDataOfClientByCliectEmailToViewAndDownload(
+			@RequestHeader(value = "token", required = true) String token, @PathVariable long id,
+			@PathVariable int page) {
 		try {
 			return leadService.getDataOfClientByCliectEmailToViewAndDownload(token, id, page);
 		} catch (UserServiceException e) {
@@ -183,4 +184,16 @@ public class LeadController {
 		}
 	}
 
+	@GetMapping("/getleadcount")
+	public ResponseEntity<?> getUsersCountByRole(
+			@RequestHeader(value = "token", required = true) String token,
+			@RequestParam(value = "userId", required = false) Long userId) {
+		try {
+			return leadService.getTotalCountsOfLeads(token, userId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
+		}
+	}
+	
 }
