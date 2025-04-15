@@ -52,7 +52,7 @@ public class ImportLeadController {
 //	}
 
 	@PostMapping("/upload-template")
-	public ResponseEntity<?> uploadTemplate(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> uploadTemplate(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam long userId, @RequestParam(required = false) List<Long> assignedTo,
 			@RequestParam("file") MultipartFile file) {
 		if (file.isEmpty()) {
@@ -84,7 +84,7 @@ public class ImportLeadController {
 	}
 
 	@GetMapping("/assigned")
-	public ResponseEntity<?> assignedLeads(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> assignedLeads(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam int page, @RequestParam Status status) {
 		try {
 			return service.assignLeads(token, page, status);
@@ -98,7 +98,7 @@ public class ImportLeadController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getLeadsById/{id}")
-	public ResponseEntity<?> getSales(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getSales(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return service.getLeadsById(token, id);
@@ -109,7 +109,7 @@ public class ImportLeadController {
 	}
 
 	@GetMapping("/leads")
-	public ResponseEntity<?> getLeadsBysalesId(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getLeadsBysalesId(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam long userId, @RequestParam int page) {
 		try {
 			return service.getLeadsBysalesId(token, userId, page);
@@ -176,7 +176,7 @@ public class ImportLeadController {
 
 	@GetMapping("/getLeadsCount")
 	public ResponseEntity<?> getUsersCountByRole(
-			@RequestHeader(value = "token", required = true) String token,
+			@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam(value = "userId", required = false) Long userId) {
 		try {
 			return service.getTotalCountsOfLeads(token, userId);

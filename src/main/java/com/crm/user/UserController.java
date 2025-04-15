@@ -38,7 +38,7 @@ public class UserController {
 	}
 
 	@PostMapping("/addUser/{id}")
-	public ResponseEntity<?> registerUser(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> registerUser(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id, @RequestBody String userJson) {
 		try {
 			return service.addUser(token, id, userJson);
@@ -49,7 +49,7 @@ public class UserController {
 	}
 
 	@PostMapping("/addadmin/{id}")
-	public ResponseEntity<?> registerAdmin(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> registerAdmin(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id, @RequestBody String userJson) {
 		try {
 			System.out.println("In add admin api");
@@ -72,7 +72,7 @@ public class UserController {
 	}
 
 	@GetMapping("/getAdminById/{id}")
-	public ResponseEntity<?> getUser(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getUser(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return service.getAdmin(token, id);
@@ -83,7 +83,7 @@ public class UserController {
 	}
 
 	@GetMapping("/getCRMById/{id}")
-	public ResponseEntity<?> getCRM(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getCRM(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return service.getCRM(token, id);
@@ -94,7 +94,7 @@ public class UserController {
 	}
 
 	@GetMapping("/getSalesById/{id}")
-	public ResponseEntity<?> getSales(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getSales(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return service.getSalesById(token, id);
@@ -105,7 +105,7 @@ public class UserController {
 	}
 
 	@PutMapping("/addDetails/{userId}")
-	public ResponseEntity<?> updateUserDetails(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> updateUserDetails(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long userId, @RequestBody User user) {
 		try {
 			return service.updateUserDetails(token, userId, user);
@@ -117,7 +117,7 @@ public class UserController {
 
 	@PutMapping("/updateUser/{adminId}/{response}")
 	public ResponseEntity<?> updateUserAsBlockUnBlock(
-			@RequestHeader(value = "token", required = true) String token, @PathVariable long adminId,
+			@RequestHeader(value = "Authorization", required = true) String token, @PathVariable long adminId,
 			@PathVariable Status response, @RequestParam(name = "note", required = false) String note) {
 		try {
 			return service.updateUserAsBlockUnBlock(token, adminId, response, note);
@@ -129,7 +129,7 @@ public class UserController {
 
 	@PutMapping("/updateadmin/{superadminId}/{response}")
 	public ResponseEntity<?> updateAdminAsBlockUnBlockBySuperAdmin(
-			@RequestHeader(value = "token", required = true) String token, @PathVariable long superadminId,
+			@RequestHeader(value = "Authorization", required = true) String token, @PathVariable long superadminId,
 			@PathVariable Status response, @RequestParam(name = "note", required = false) String note) {
 		try {
 			return service.updateAdminAsBlockUnBlockBySuperAdmin(token, superadminId, response, note);
@@ -140,7 +140,7 @@ public class UserController {
 	}
 
 	@PutMapping("/deleteUser/{adminId}/{userId}")
-	public ResponseEntity<?> deleteUser(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> deleteUser(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long adminId, @PathVariable long userId) {
 		try {
 			return service.deleteUser(token, adminId, userId);
@@ -151,7 +151,7 @@ public class UserController {
 	}
 
 	@GetMapping("/getUsers")
-	public ResponseEntity<?> getUsersListByRole(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getUsersListByRole(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam int page, @RequestParam String role) {
 		try {
 			return service.getUsersListByRole(token, page, role);
@@ -162,7 +162,7 @@ public class UserController {
 	}
 
 	@GetMapping("/getadmins")
-	public ResponseEntity<?> getAdminsList(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getAdminsList(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam int page) {
 		try {
 			return service.getAdminsList(token, page);
@@ -173,7 +173,7 @@ public class UserController {
 	}
 
 	@GetMapping("/getSales/{role}")
-	public ResponseEntity<?> getSalesListByRole(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getSalesListByRole(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable String role) {
 		try {
 			return service.getSalesListByRole(token, role);
@@ -185,7 +185,7 @@ public class UserController {
 
 	@GetMapping("/getCountByRole/{role}")
 	public ResponseEntity<?> getTotalCountForAdmin(
-			@RequestHeader(value = "token", required = true) String token, @PathVariable String role) {
+			@RequestHeader(value = "Authorization", required = true) String token, @PathVariable String role) {
 		try {
 			return service.getTotalCountForAdmin(token, role);
 		} catch (Exception e) {
@@ -195,7 +195,7 @@ public class UserController {
 
 	@GetMapping("/getUsersCountByRole")
 	public ResponseEntity<?> getUsersCountByRole(
-			@RequestHeader(value = "token", required = true) String token) {
+			@RequestHeader(value = "Authorization", required = true) String token) {
 		try {
 			return service.getUsersCountByRole(token);
 		} catch (Exception e) {
@@ -204,7 +204,7 @@ public class UserController {
 	}
 
 	@PostMapping("/addclient/{id}")
-	public ResponseEntity<?> addClientByCRM(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> addClientByCRM(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id, @RequestBody String userJson) {
 		try {
 			System.out.println("In add admin api");
@@ -217,7 +217,7 @@ public class UserController {
 
 	@PutMapping("/updatedetails/{id}")
 	public ResponseEntity<?> updateUserDetailsAndAdminDetails(
-			@RequestHeader(value = "token", required = true) String token, @PathVariable long id,
+			@RequestHeader(value = "Authorization", required = true) String token, @PathVariable long id,
 			@RequestBody String userJson) {
 		try {
 			return service.updateUserDetailsAndAdminDetails(token, id, userJson);

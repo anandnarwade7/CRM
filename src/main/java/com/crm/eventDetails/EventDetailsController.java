@@ -30,8 +30,8 @@ import com.crm.user.UserServiceException;
 		("http://localhost:5174"), ("http://139.84.136.208 ") })
 public class EventDetailsController {
 
-//	private String serverDocsUrl = "C:\\CRM\\MediaData\\";
-	private String serverDocsUrl = "/root/mediadata/Docs/";
+	private String serverDocsUrl = "C:\\CRM\\MediaData\\";
+//	private String serverDocsUrl = "/root/mediadata/Docs/";
 
 	@Autowired
 	private FilesManager filesManager;
@@ -43,7 +43,7 @@ public class EventDetailsController {
 	public EventDetailsService eventDetailsService;
 
 	@PostMapping("/addEventDetails/{crManagerId}")
-	public ResponseEntity<?> addEventDetails(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> addEventDetails(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long crManagerId,
 			@RequestParam(value = "statusReport", required = false) MultipartFile statusReport,
 			@RequestParam(value = "architectsLetter", required = false) MultipartFile architectsLetter,
@@ -97,7 +97,7 @@ public class EventDetailsController {
 	}
 
 	@PutMapping("/updateEvent/{eventId}/{crManagerId}")
-	public ResponseEntity<?> updateEventDetails(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> updateEventDetails(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long eventId, @PathVariable long crManagerId,
 			@RequestParam(value = "statusReport", required = false) MultipartFile statusReport,
 			@RequestParam(value = "architectsLetter", required = false) MultipartFile architectsLetter,

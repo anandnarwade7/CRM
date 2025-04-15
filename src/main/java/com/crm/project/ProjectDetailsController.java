@@ -30,7 +30,7 @@ public class ProjectDetailsController {
 
 	@PostMapping("/create")
 	public ResponseEntity<?> createProjectDetails(
-			@RequestHeader(value = "token", required = true) String token,
+			@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestBody ProjectDetails details, @RequestParam long userId) {
 		try {
 			System.out.println("In controller ");

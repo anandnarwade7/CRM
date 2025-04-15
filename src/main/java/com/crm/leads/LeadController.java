@@ -39,11 +39,11 @@ public class LeadController {
 	@Autowired
 	private FilesManager filesManager;
 
-//	private String serverDocsUrl = "D:\\Files\\MediaData\\";
-	private String serverDocsUrl = "/root/mediadata/Docs/";
+	private String serverDocsUrl = "D:\\Files\\MediaData\\";
+//	private String serverDocsUrl = "/root/mediadata/Docs/";
 
 	@PostMapping("/upload")
-	public ResponseEntity<?> uploadTemplate(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> uploadTemplate(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam long userId, @RequestParam(required = false) List<Long> assignedTo,
 			@RequestParam("file") MultipartFile file) {
 		if (file.isEmpty()) {
@@ -61,7 +61,7 @@ public class LeadController {
 	}
 
 	@PostMapping("/assign")
-	public ResponseEntity<?> assignConvertedLeads(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> assignConvertedLeads(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam long userId, @RequestParam(required = false) List<Long> assignedTo,
 			@RequestParam(required = false) List<Long> leadIds) {
 		try {
@@ -76,7 +76,7 @@ public class LeadController {
 	}
 
 	@GetMapping("/listbystatus")
-	public ResponseEntity<?> importedClients(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> importedClients(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam int page, @RequestParam Status status) {
 		try {
 			return leadService.importedClients(token, page, status);
@@ -117,7 +117,7 @@ public class LeadController {
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
 	@GetMapping("/getById/{id}")
-	public ResponseEntity<?> getLeadById(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getLeadById(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id) {
 		try {
 			return leadService.getClientById(token, id);
@@ -128,7 +128,7 @@ public class LeadController {
 	}
 
 	@GetMapping("/clientsbycr")
-	public ResponseEntity<?> getClientsByCrmId(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> getClientsByCrmId(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam long userId, @RequestParam int page) {
 		try {
 			return leadService.getClientsByCrmId(token, userId, page);
@@ -155,7 +155,7 @@ public class LeadController {
 	}
 
 	@PutMapping("/uploaddocs/{id}")
-	public ResponseEntity<?> uploadDocs(@RequestHeader(value = "token", required = true) String token,
+	public ResponseEntity<?> uploadDocs(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long id, @RequestParam(value = "agreement") MultipartFile agreement,
 			@RequestParam(value = "stampDuty") MultipartFile stampDuty,
 			@RequestParam(value = "tdsDoc") MultipartFile tdsDoc,
@@ -186,7 +186,7 @@ public class LeadController {
 
 	@GetMapping("/getleadcount")
 	public ResponseEntity<?> getUsersCountByRole(
-			@RequestHeader(value = "token", required = true) String token,
+			@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam(value = "userId", required = false) Long userId) {
 		try {
 			return leadService.getTotalCountsOfLeads(token, userId);
