@@ -33,4 +33,6 @@ public class SecurityConfig {
             .cors(cors -> cors.disable());;
         return http.build();
     }
+    
+    
 }

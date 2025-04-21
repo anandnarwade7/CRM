@@ -1,11 +1,11 @@
 package com.crm.project;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.crm.user.UserServiceException;
 
 import jakarta.transaction.Transactional;
 
@@ -29,8 +31,7 @@ public class ProjectDetailsController {
 	private ProjectDetailsService projectDetailsService;
 
 	@PostMapping("/create")
-	public ResponseEntity<?> createProjectDetails(
-			@RequestHeader(value = "Authorization", required = true) String token,
+	public ResponseEntity<?> createProjectDetails(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestBody ProjectDetails details, @RequestParam long userId) {
 		try {
 			System.out.println("In controller ");
@@ -61,7 +62,7 @@ public class ProjectDetailsController {
 	}
 
 	@PostMapping("/tower/create")
-	public ResponseEntity<?> createTowerDetails(@RequestBody String requestData) {
+	public ResponseEntity<?> createTowerDetails1(@RequestBody List<String> requestData) {
 		try {
 			return projectDetailsService.createTower1(requestData);
 		} catch (Exception ex) {
@@ -131,6 +132,18 @@ public class ProjectDetailsController {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update flat");
+		}
+	}
+
+	@GetMapping("/details")
+	public ResponseEntity<?> getProjectDetails(@RequestHeader("Authorization") String token) {
+		try {
+			return projectDetailsService.projectsDetails(token);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to fetch details");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 

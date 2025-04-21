@@ -11,7 +11,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.crm.Exception.Error;
@@ -27,7 +27,7 @@ import com.crm.fileHandler.FilesManager;
 import com.crm.user.Status;
 import com.crm.user.UserServiceException;
 
-@Controller
+@RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
 		("http://localhost:5174"), ("http://139.84.136.208") })
 @RequestMapping("/api/clients")
@@ -39,8 +39,8 @@ public class LeadController {
 	@Autowired
 	private FilesManager filesManager;
 
-	private String serverDocsUrl = "D:\\Files\\MediaData\\";
-//	private String serverDocsUrl = "/root/mediadata/Docs/";
+//	private String serverDocsUrl = "D:\\Files\\MediaData\\";
+	private String serverDocsUrl = "/root/mediadata/Docs/";
 
 	@PostMapping("/upload")
 	public ResponseEntity<?> uploadTemplate(@RequestHeader(value = "Authorization", required = true) String token,
@@ -172,7 +172,7 @@ public class LeadController {
 
 	@GetMapping("/get/client/data/{id}/{page}")
 	public ResponseEntity<?> getDataOfClientByCliectEmailToViewAndDownload(
-			@RequestHeader(value = "token", required = true) String token, @PathVariable long id,
+			@RequestHeader(value = "Authorization", required = true) String token, @PathVariable long id,
 			@PathVariable int page) {
 		try {
 			return leadService.getDataOfClientByCliectEmailToViewAndDownload(token, id, page);

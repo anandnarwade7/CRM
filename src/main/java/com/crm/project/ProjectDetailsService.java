@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,9 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.crm.Exception.Error;
 import com.crm.security.JwtUtil;
-import com.crm.user.UserController;
+import com.crm.user.Admins;
+import com.crm.user.AdminsRepository;
+import com.crm.user.User;
+import com.crm.user.UserRepository;
 import com.crm.user.UserServiceException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -38,6 +42,12 @@ public class ProjectDetailsService {
 
 	@Autowired
 	private FlatRepository flatRepo;
+
+	@Autowired
+	private AdminsRepository adminsRepository;
+
+	@Autowired
+	private UserRepository userRepository;
 
 	@Transactional
 	public ResponseEntity<?> createProjectDetails(String token, ProjectDetails details, long userId) {
@@ -114,46 +124,6 @@ public class ProjectDetailsService {
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode jsonNode = objectMapper.readTree(requestData);
 
-			String towerName = jsonNode.get("towerName").asText();
-			long projectId = jsonNode.get("project_id").asLong();
-			int totalTowers = jsonNode.get("totalTowers").asInt();
-			int totalFloors = jsonNode.get("totalFloor").asInt();
-			int flatPerFloor = jsonNode.get("flatPerFloor").asInt();
-
-			boolean existsByTowerNameAndProjectId = towerDetailsRepo.existsByTowerNameAndProjectId(towerName,
-					projectId);
-			if (existsByTowerNameAndProjectId) {
-				throw new UserServiceException(409, "cannot add same name");
-			}
-			Optional<ProjectDetails> projectOpt = projectDetailsRepo.findById(projectId);
-
-			if (projectOpt.isEmpty()) {
-				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Project not found");
-			}
-
-			ProjectDetails project = projectOpt.get();
-
-			TowerDetails towerDetails = new TowerDetails();
-			towerDetails.setTowerName(towerName);
-			towerDetails.setProject(project);
-			towerDetails.setTotalTowers(totalTowers);
-			towerDetails.setTotalFloors(totalFloors);
-			towerDetails.setFlatPerFloor(flatPerFloor);
-
-			towerDetailsRepo.save(towerDetails);
-
-			return ResponseEntity.status(HttpStatus.CREATED).body("Tower created successfully");
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create tower");
-		}
-	}
-
-	public ResponseEntity<?> createTower1(String requestData) {
-		try {
-			ObjectMapper objectMapper = new ObjectMapper();
-			JsonNode jsonNode = objectMapper.readTree(requestData);
-
 			String towerName = jsonNode.has("towerName") ? jsonNode.get("towerName").asText() : null;
 			long projectId = jsonNode.has("project_id") ? jsonNode.get("project_id").asLong() : 0;
 			int totalTowers = jsonNode.has("totalTowers") ? jsonNode.get("totalTowers").asInt() : 0;
@@ -213,6 +183,84 @@ public class ProjectDetailsService {
 			e.printStackTrace();
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create tower");
 		}
+	}
+
+	public ResponseEntity<?> createTower1(List<String> requestData) {
+		List<String> successMessages = new ArrayList<>();
+		List<String> failedMessages = new ArrayList<>();
+		ObjectMapper objectMapper = new ObjectMapper();
+
+		try {
+			if (requestData == null || requestData.isEmpty()) {
+				throw new UserServiceException(409, "Request data list is empty or null.");
+			}
+
+			for (String jsonString : requestData) {
+				try {
+					JsonNode jsonNode = objectMapper.readTree(jsonString);
+
+					String towerName = jsonNode.has("towerName") ? jsonNode.get("towerName").asText() : null;
+					long projectId = jsonNode.has("project_id") ? jsonNode.get("project_id").asLong() : 0;
+					int totalTowers = jsonNode.has("totalTowers") ? jsonNode.get("totalTowers").asInt() : 0;
+					int totalFloors = jsonNode.has("totalFloors") ? jsonNode.get("totalFloors").asInt() : 0;
+					int flatPerFloor = jsonNode.has("flatPerFloor") ? jsonNode.get("flatPerFloor").asInt() : 0;
+
+					if (towerDetailsRepo.existsByTowerNameAndProjectId(towerName, projectId)) {
+						throw new UserServiceException(409, "Tower name already exists for project ID: " + projectId);
+					}
+
+					Optional<ProjectDetails> projectOpt = projectDetailsRepo.findById(projectId);
+					if (projectOpt.isEmpty()) {
+						throw new UserServiceException(404, "Project not found for ID: " + projectId);
+					}
+
+					ProjectDetails project = projectOpt.get();
+
+					TowerDetails towerDetails = new TowerDetails();
+					towerDetails.setTowerName(towerName);
+					towerDetails.setProject(project);
+					towerDetails.setTotalTowers(totalTowers);
+					towerDetails.setTotalFloors(totalFloors);
+					towerDetails.setFlatPerFloor(flatPerFloor);
+					TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
+
+					for (int i = 1; i <= totalFloors; i++) {
+						FloorDetails floor = new FloorDetails();
+						floor.setFloorName("Floor " + i);
+						floor.setTower(savedTower);
+						FloorDetails savedFloor = floorDetailsRepo.save(floor);
+
+						for (int j = 1; j <= flatPerFloor; j++) {
+							Flat flat = new Flat();
+							int flatNumber = (i * 100) + j;
+							flat.setFlatNumber(flatNumber);
+							flat.setStatus("Available");
+							flat.setFloor(savedFloor);
+							flatRepo.save(flat);
+						}
+					}
+
+					successMessages.add("Tower '" + towerName + "' created successfully.");
+
+				} catch (JsonProcessingException e) {
+					failedMessages.add("Invalid JSON format: " + e.getOriginalMessage());
+				} catch (UserServiceException e) {
+					failedMessages.add("Business rule violation: " + e.getMessage());
+				} catch (Exception e) {
+					failedMessages.add("Unexpected error: " + e.getMessage());
+				}
+			}
+
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(Map.of("error", "Unexpected top-level error: " + e.getMessage()));
+		}
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("success", successMessages);
+		response.put("failed", failedMessages);
+
+		return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
 	}
 
 	public ResponseEntity<?> createFloorDetails(FloorDetails floorDetails) {
@@ -470,4 +518,63 @@ public class ProjectDetailsService {
 		}
 	}
 
+	public ResponseEntity<?> projectsDetails(String token) {
+		try {
+			System.out.println("In serivce ");
+			if (jwtUtil.isTokenExpired(token)) {
+				System.out.println("Jwt expiration checking");
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+				System.out.println("role checking ");
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			long userId;
+			if ("ADMIN".equalsIgnoreCase(role)) {
+				Admins byEmail = adminsRepository.findByEmail(email);
+				userId = byEmail.getId();
+			} else {
+				User byEmail = userRepository.findByEmail(email);
+				userId = byEmail.getUserId();
+			}
+
+			List<ProjectDetails> byId = projectDetailsRepo.findByUserId(userId);
+			List<Map<String, Object>> responseList = new ArrayList<>();
+			for (ProjectDetails project : byId) {
+				Map<String, Object> projectMap = new HashMap<>();
+				projectMap.put("id", project.getId());
+				projectMap.put("propertyName", project.getPropertyName());
+				projectMap.put("address", project.getAddress());
+				projectMap.put("propertyArea", project.getPropertyArea());
+				projectMap.put("userId", project.getUserId());
+				projectMap.put("createdOn", project.getCreatedOn());
+				projectMap.put("updatedOn", project.getUpdatedOn());
+
+				long towerCount = towerDetailsRepo.findByProjectId(project.getId());
+				long totalFloors = towerDetailsRepo.getTotalFloorsByProjectId(project.getId());
+				projectMap.put("totalTowers", towerCount != 0 ? towerCount : 0);
+				projectMap.put("totalFloors", totalFloors != 0 ? totalFloors : 0);
+
+				responseList.add(projectMap);
+			}
+
+			return ResponseEntity.ok(responseList);
+		}
+
+		catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+		}
+	}
 }

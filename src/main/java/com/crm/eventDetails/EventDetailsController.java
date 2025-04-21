@@ -30,8 +30,8 @@ import com.crm.user.UserServiceException;
 		("http://localhost:5174"), ("http://139.84.136.208 ") })
 public class EventDetailsController {
 
-	private String serverDocsUrl = "C:\\CRM\\MediaData\\";
-//	private String serverDocsUrl = "/root/mediadata/Docs/";
+//	private String serverDocsUrl = "C:\\CRM\\MediaData\\";
+	private String serverDocsUrl = "/root/mediadata/Docs/";
 
 	@Autowired
 	private FilesManager filesManager;
@@ -146,7 +146,7 @@ public class EventDetailsController {
 
 	@GetMapping("/getalleventdetails/{leadId}")
 	public ResponseEntity<?> getEventDetailsLeadId(
-			@RequestHeader(value = "token", required = true) String token, @PathVariable long leadId) {
+			@RequestHeader(value = "Authorization", required = true) String token, @PathVariable long leadId) {
 		try {
 			return eventDetailsService.getEventDetailsByLeadId(token, leadId);
 		} catch (UserServiceException e) {
@@ -167,7 +167,7 @@ public class EventDetailsController {
 
 	@DeleteMapping("/deleteEventById/{eventId}")
 	public ResponseEntity<?> deleteEventById(
-			@RequestHeader(value = "token", required = true) String token,
+			@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long eventId) {
 		try {
 			return eventDetailsService.deleteDetailsById(token, eventId);
