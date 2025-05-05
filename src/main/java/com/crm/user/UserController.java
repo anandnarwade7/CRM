@@ -226,4 +226,13 @@ public class UserController {
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to add data", System.currentTimeMillis()));
 		}
 	}
+
+	@GetMapping("/getclientsusers")
+	public ResponseEntity<?> getClientsForAdmin(@RequestHeader(value = "Authorization", required = true) String token) {
+		try {
+			return service.getClientsForAdmin(token);
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
+		}
+	}
 }

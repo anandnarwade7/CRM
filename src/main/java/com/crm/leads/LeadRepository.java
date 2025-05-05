@@ -41,4 +41,6 @@ public interface LeadRepository  extends JpaRepository<LeadDetails, Long>{
 
 	Page<LeadDetails> findAllDataOfClientByLeadEmailOrderByCreateOnDesc(String email, Pageable pageable);
 
+	LeadDetails findByLeadEmail(String clientEmail);
+
 }

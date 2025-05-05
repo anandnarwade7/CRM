@@ -961,8 +961,57 @@ public class UserService {
 			String userObject = getUserObject(admin);
 			return ResponseEntity.ok(userObject);
 		} catch (UserServiceException e) {
-			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
-					"Unable to register user", System.currentTimeMillis()));
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to update user", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			throw new UserServiceException(409, "Invalid Credentials ");
+		}
+	}
+
+	public ResponseEntity<?> getClientsForAdmin(String token) {
+		try {
+			if (token == null || token.trim().isEmpty()) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: No token provided.");
+			}
+
+			System.out.println("Received token: " + token);
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String userRole = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			System.out.println("User Role: " + userRole + ", Email: " + email);
+			if (!"ADMIN".equalsIgnoreCase(userRole) && !"CRM".equalsIgnoreCase(userRole)) {
+				System.err.println("checking token role " + !"ADMIN".equalsIgnoreCase(userRole));
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			List<Client> clients = null;
+			if ("ADMIN".equalsIgnoreCase(userRole)) {
+				Admins byEmail = adminRepository.findByEmail(email);
+				System.out.println("User  "+ byEmail);
+				List<User> usersByUserId = repository.findUsersByUserId(byEmail.getId());
+				System.out.println("CRMS Role: "+usersByUserId.size());
+				for (User user : usersByUserId) {
+					clients = clientRepository.findClientsByUserId(user.getId());
+					System.out.println("Clients Role: " +clients);
+				}
+			} else if ("CRM".equalsIgnoreCase(userRole)) {
+				User byEmail = repository.findByEmail(email);
+				clients = clientRepository.findClientsByUserId(byEmail.getId());
+			}
+
+			return ResponseEntity.ok(clients);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find clients", System.currentTimeMillis()));
 		} catch (Exception ex) {
 			throw new UserServiceException(409, "Invalid Credentials ");
 		}

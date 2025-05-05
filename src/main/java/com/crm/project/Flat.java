@@ -23,13 +23,17 @@ public class Flat {
 	private String flatSize;
 	private String flatType;
 	private String status;
+	private long clientsId;
+	private long salesId;
+	private long crmId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "floor_id")
 	@JsonIgnore
 	private FloorDetails floor;
-	
-	public Flat() {}
+
+	public Flat() {
+	}
 
 	public long getId() {
 		return id;
@@ -79,20 +83,49 @@ public class Flat {
 		this.floor = floor;
 	}
 
-	public Flat(long id, int flatNumber, String flatSize, String flatType, String status, FloorDetails floor) {
+	public long getClientsId() {
+		return clientsId;
+	}
+
+	public void setClientsId(long clientsId) {
+		this.clientsId = clientsId;
+	}
+
+	public long getSalesId() {
+		return salesId;
+	}
+
+	public long getCrmId() {
+		return crmId;
+	}
+
+	public void setSalesId(long salesId) {
+		this.salesId = salesId;
+	}
+
+	public void setCrmId(long crmId) {
+		this.crmId = crmId;
+	}
+
+	public Flat(long id, int flatNumber, String flatSize, String flatType, String status, long clientsId, long salesId,
+			long crmId, FloorDetails floor) {
 		super();
 		this.id = id;
 		this.flatNumber = flatNumber;
 		this.flatSize = flatSize;
 		this.flatType = flatType;
 		this.status = status;
+		this.clientsId = clientsId;
+		this.salesId = salesId;
+		this.crmId = crmId;
 		this.floor = floor;
 	}
 
 	@Override
 	public String toString() {
 		return "Flat [id=" + id + ", flatNumber=" + flatNumber + ", flatSize=" + flatSize + ", flatType=" + flatType
-				+ ", status=" + status + ", floor=" + floor + "]";
+				+ ", status=" + status + ", clientsId=" + clientsId + ", salesId=" + salesId + ", crmId=" + crmId
+				+ ", floor=" + floor + "]";
 	}
 
 }

@@ -1,21 +1,35 @@
 package com.crm.project;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.crm.Exception.Error;
+import com.crm.leads.LeadDetails;
+import com.crm.leads.LeadRepository;
+import com.crm.notifications.Notifications;
+import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
 import com.crm.user.Admins;
 import com.crm.user.AdminsRepository;
+import com.crm.user.Client;
+import com.crm.user.ClientRepository;
 import com.crm.user.User;
 import com.crm.user.UserRepository;
 import com.crm.user.UserServiceException;
@@ -49,6 +63,15 @@ public class ProjectDetailsService {
 	@Autowired
 	private UserRepository userRepository;
 
+	@Autowired
+	private LeadRepository leadRepository;
+
+	@Autowired
+	private ClientRepository clientRepository;
+
+	@Autowired
+	private NotificationsRepository notificationsRepository;
+
 	@Transactional
 	public ResponseEntity<?> createProjectDetails(String token, ProjectDetails details, long userId) {
 		try {
@@ -80,26 +103,6 @@ public class ProjectDetailsService {
 		}
 	}
 
-//	public ResponseEntity<?> getProjectDetailsById(long projectId) {
-//		try {
-//			Optional<ProjectDetails> projectDetailsOpt = projectDetailsRepo.findById(projectId);
-//			List<TowerDetails> byProjectId = towerDetailsRepo.getByProjectId(projectId);
-//			for (TowerDetails towerDetails : byProjectId) {
-//				List<FloorDetails> byTowerId = floorDetailsRepo.getByTowerId(towerDetails.getId());
-//				for (FloorDetails floorDetails : byTowerId) {
-//					flatRepo.findByFloorId(floorDetails.getId());
-//				}
-//			}
-//			if (projectDetailsOpt.isPresent()) {
-//				return ResponseEntity.ok(projectDetailsOpt.get());
-//			} else {
-//				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Project not found");
-//			}
-//		} catch (Exception ex) {
-//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to retrieve project details.");
-//		}
-//	}
-
 	public ResponseEntity<?> getProjectDetailsById(long projectId) {
 		try {
 			Optional<ProjectDetails> projectDetailsOpt = projectDetailsRepo.findById(projectId);
@@ -109,8 +112,6 @@ public class ProjectDetailsService {
 			}
 
 			ProjectDetails projectDetails = projectDetailsOpt.get();
-
-//			projectDetails.setTowers(towers);
 
 			return ResponseEntity.ok(projectDetails);
 		} catch (Exception ex) {
@@ -186,81 +187,90 @@ public class ProjectDetailsService {
 	}
 
 	public ResponseEntity<?> createTower1(List<String> requestData) {
-		List<String> successMessages = new ArrayList<>();
-		List<String> failedMessages = new ArrayList<>();
-		ObjectMapper objectMapper = new ObjectMapper();
-
 		try {
-			if (requestData == null || requestData.isEmpty()) {
-				throw new UserServiceException(409, "Request data list is empty or null.");
-			}
+			List<String> successMessages = new ArrayList<>();
+			List<String> failedMessages = new ArrayList<>();
+			ObjectMapper objectMapper = new ObjectMapper();
 
-			for (String jsonString : requestData) {
-				try {
-					JsonNode jsonNode = objectMapper.readTree(jsonString);
-
-					String towerName = jsonNode.has("towerName") ? jsonNode.get("towerName").asText() : null;
-					long projectId = jsonNode.has("project_id") ? jsonNode.get("project_id").asLong() : 0;
-					int totalTowers = jsonNode.has("totalTowers") ? jsonNode.get("totalTowers").asInt() : 0;
-					int totalFloors = jsonNode.has("totalFloors") ? jsonNode.get("totalFloors").asInt() : 0;
-					int flatPerFloor = jsonNode.has("flatPerFloor") ? jsonNode.get("flatPerFloor").asInt() : 0;
-
-					if (towerDetailsRepo.existsByTowerNameAndProjectId(towerName, projectId)) {
-						throw new UserServiceException(409, "Tower name already exists for project ID: " + projectId);
-					}
-
-					Optional<ProjectDetails> projectOpt = projectDetailsRepo.findById(projectId);
-					if (projectOpt.isEmpty()) {
-						throw new UserServiceException(404, "Project not found for ID: " + projectId);
-					}
-
-					ProjectDetails project = projectOpt.get();
-
-					TowerDetails towerDetails = new TowerDetails();
-					towerDetails.setTowerName(towerName);
-					towerDetails.setProject(project);
-					towerDetails.setTotalTowers(totalTowers);
-					towerDetails.setTotalFloors(totalFloors);
-					towerDetails.setFlatPerFloor(flatPerFloor);
-					TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
-
-					for (int i = 1; i <= totalFloors; i++) {
-						FloorDetails floor = new FloorDetails();
-						floor.setFloorName("Floor " + i);
-						floor.setTower(savedTower);
-						FloorDetails savedFloor = floorDetailsRepo.save(floor);
-
-						for (int j = 1; j <= flatPerFloor; j++) {
-							Flat flat = new Flat();
-							int flatNumber = (i * 100) + j;
-							flat.setFlatNumber(flatNumber);
-							flat.setStatus("Available");
-							flat.setFloor(savedFloor);
-							flatRepo.save(flat);
-						}
-					}
-
-					successMessages.add("Tower '" + towerName + "' created successfully.");
-
-				} catch (JsonProcessingException e) {
-					failedMessages.add("Invalid JSON format: " + e.getOriginalMessage());
-				} catch (UserServiceException e) {
-					failedMessages.add("Business rule violation: " + e.getMessage());
-				} catch (Exception e) {
-					failedMessages.add("Unexpected error: " + e.getMessage());
+			try {
+				if (requestData == null || requestData.isEmpty()) {
+					throw new UserServiceException(409, "Request data list is empty or null.");
 				}
+
+				for (String jsonString : requestData) {
+					try {
+						JsonNode jsonNode = objectMapper.readTree(jsonString);
+
+						String towerName = jsonNode.has("towerName") ? jsonNode.get("towerName").asText() : null;
+						long projectId = jsonNode.has("project_id") ? jsonNode.get("project_id").asLong() : 0;
+//					int totalTowers = jsonNode.has("totalTowers") ? jsonNode.get("totalTowers").asInt() : 0;
+						int totalFloors = jsonNode.has("totalFloors") ? jsonNode.get("totalFloors").asInt() : 0;
+						int flatPerFloor = jsonNode.has("flatPerFloor") ? jsonNode.get("flatPerFloor").asInt() : 0;
+
+						if (towerDetailsRepo.existsByTowerNameAndProjectId(towerName, projectId)) {
+							throw new UserServiceException(409,
+									"Tower name: " + towerName + " already exists for project ID: " + projectId);
+						}
+
+						Optional<ProjectDetails> projectOpt = projectDetailsRepo.findById(projectId);
+						if (projectOpt.isEmpty()) {
+							throw new UserServiceException(404, "Project not found for ID: " + projectId);
+						}
+
+						ProjectDetails project = projectOpt.get();
+
+						TowerDetails towerDetails = new TowerDetails();
+						towerDetails.setTowerName(towerName);
+						towerDetails.setProject(project);
+//					towerDetails.setTotalTowers(totalTowers);
+						towerDetails.setTotalFloors(totalFloors);
+						towerDetails.setFlatPerFloor(flatPerFloor);
+						TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
+
+						for (int i = 1; i <= totalFloors; i++) {
+							FloorDetails floor = new FloorDetails();
+							floor.setFloorName("Floor " + i);
+							floor.setTower(savedTower);
+							FloorDetails savedFloor = floorDetailsRepo.save(floor);
+
+							for (int j = 1; j <= flatPerFloor; j++) {
+								Flat flat = new Flat();
+								int flatNumber = (i * 100) + j;
+								flat.setFlatNumber(flatNumber);
+								flat.setStatus("Available");
+								flat.setFloor(savedFloor);
+								flatRepo.save(flat);
+							}
+						}
+
+						successMessages.add("Tower '" + towerName + "' created successfully.");
+
+					} catch (JsonProcessingException e) {
+						failedMessages.add("Invalid JSON format: " + e.getOriginalMessage());
+					} catch (UserServiceException e) {
+						failedMessages.add("Business rule violation: " + e.getMessage());
+					} catch (Exception e) {
+						failedMessages.add("Unexpected error: " + e.getMessage());
+					}
+				}
+
+			} catch (UserServiceException e) {
+				return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+						"Unexpected top-level error: " + e.getMessage(), System.currentTimeMillis()));
 			}
 
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body(Map.of("error", "Unexpected top-level error: " + e.getMessage()));
+			Map<String, Object> response = new HashMap<>();
+			response.put("success", successMessages);
+			response.put("failed", failedMessages);
+
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to add details", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to add details: " + ex.getMessage());
 		}
-
-		Map<String, Object> response = new HashMap<>();
-		response.put("success", successMessages);
-		response.put("failed", failedMessages);
-
-		return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
 	}
 
 	public ResponseEntity<?> createFloorDetails(FloorDetails floorDetails) {
@@ -393,7 +403,7 @@ public class ProjectDetailsService {
 		}
 	}
 
-	public ResponseEntity<?> updateFlatStatus(long flatId, String status) {
+	public ResponseEntity<?> updateFlatStatus(long flatId, String status, String area) {
 		try {
 			Optional<Flat> flatOpt = flatRepo.findById(flatId);
 
@@ -402,7 +412,12 @@ public class ProjectDetailsService {
 			}
 
 			Flat flat = flatOpt.get();
-			flat.setStatus(status);
+			if (status != null) {
+				flat.setStatus(status);
+			}
+			if (area != null) {
+				flat.setFlatSize(area);
+			}
 			flatRepo.save(flat);
 			return ResponseEntity.ok("Flat status updated successfully");
 
@@ -486,8 +501,23 @@ public class ProjectDetailsService {
 		return projectMap;
 	}
 
-	public ResponseEntity<?> updateFlat(long flatId, Map<String, Object> requestData) {
+	public ResponseEntity<?> updateFlat(String token, long flatId, Map<String, Object> requestData) {
 		try {
+			System.out.println("In service");
+
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			String email = userClaims.get("email");
+
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
 			Optional<Flat> flatOpt = flatRepo.findById(flatId);
 			if (flatOpt.isEmpty()) {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Flat not found");
@@ -496,29 +526,69 @@ public class ProjectDetailsService {
 			Flat flat = flatOpt.get();
 
 			if (requestData.containsKey("flatSize")) {
-				String flatSize = requestData.get("flatSize").toString();
-				flat.setFlatSize(flatSize);
+				flat.setFlatSize(String.valueOf(requestData.get("flatSize")));
 			}
 
 			if (requestData.containsKey("flatType")) {
-				String flatType = requestData.get("flatType").toString();
-				flat.setFlatType(flatType);
+				flat.setFlatType(String.valueOf(requestData.get("flatType")));
 			}
 
-			if (requestData.containsKey("status")) {
-				String status = requestData.get("status").toString();
-				flat.setStatus(status);
+			if ("ADMIN".equalsIgnoreCase(role)) {
+				if (requestData.containsKey("status")) {
+					flat.setStatus(String.valueOf(requestData.get("status")));
+				}
+			}
+
+			if ("CRM".equalsIgnoreCase(role)) {
+				User crmUser = userRepository.findByEmail(email);
+				if (crmUser == null) {
+					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("CRM user not found for email: " + email);
+				}
+
+				if (requestData.containsKey("status") && requestData.containsKey("clientEmail")) {
+					String status = String.valueOf(requestData.get("status"));
+					String clientEmail = String.valueOf(requestData.get("clientEmail"));
+
+					LeadDetails lead = leadRepository.findByLeadEmail(clientEmail);
+					if (lead == null) {
+						return ResponseEntity.status(HttpStatus.NOT_FOUND)
+								.body("Lead not found for email: " + clientEmail);
+					}
+
+					Client client = clientRepository.findByEmail(lead.getLeadEmail());
+					if (client == null) {
+						return ResponseEntity.status(HttpStatus.NOT_FOUND)
+								.body("Client not found for email: " + lead.getLeadEmail());
+					}
+
+					flat.setCrmId(crmUser.getId());
+					flat.setStatus(status);
+					flat.setClientsId(client.getId());
+					flat.setSalesId(lead.getSalesId());
+
+					sendNotificationToUser(crmUser, "Flat " + flatId + " booked for client " + client.getEmail());
+					sendNotificationClient(client, "Congrats! Your flat " + flatId + " has been allocated to you by "
+							+ crmUser.getEmail() + "( " + crmUser.getRole() + " )");
+
+				} else {
+					return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+							.body("Both 'status' and 'clientEmail' must be provided for CRM update.");
+				}
 			}
 
 			Flat updatedFlat = flatRepo.save(flat);
 			return ResponseEntity.ok(updatedFlat);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update flat");
+
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to update flats details", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to update details: " + ex.getMessage());
 		}
 	}
 
-	public ResponseEntity<?> projectsDetails(String token) {
+	public ResponseEntity<?> projectsDetails(String token, int page) {
 		try {
 			System.out.println("In serivce ");
 			if (jwtUtil.isTokenExpired(token)) {
@@ -546,35 +616,266 @@ public class ProjectDetailsService {
 				userId = byEmail.getUserId();
 			}
 
-			List<ProjectDetails> byId = projectDetailsRepo.findByUserId(userId);
-			List<Map<String, Object>> responseList = new ArrayList<>();
-			for (ProjectDetails project : byId) {
-				Map<String, Object> projectMap = new HashMap<>();
-				projectMap.put("id", project.getId());
-				projectMap.put("propertyName", project.getPropertyName());
-				projectMap.put("address", project.getAddress());
-				projectMap.put("propertyArea", project.getPropertyArea());
-				projectMap.put("userId", project.getUserId());
-				projectMap.put("createdOn", project.getCreatedOn());
-				projectMap.put("updatedOn", project.getUpdatedOn());
+			Pageable pageable = PageRequest.of(page - 1, 10);
+//			List<ProjectDetails> byId = projectDetailsRepo.findByUserIdOrderByCreatedOnDesc(userId);
+			Page<ProjectDetails> projectPage = projectDetailsRepo.findByUserIdOrderByCreatedOnDesc(userId, pageable);
+
+			List<Map<String, Object>> content = projectPage.getContent().stream().map(project -> {
+				Map<String, Object> map = new HashMap<>();
+				map.put("id", project.getId());
+				map.put("propertyName", project.getPropertyName());
+				map.put("address", project.getAddress());
+				map.put("propertyArea", project.getPropertyArea());
+				map.put("userId", project.getUserId());
+				map.put("createdOn", project.getCreatedOn());
+				map.put("updatedOn", project.getUpdatedOn());
 
 				long towerCount = towerDetailsRepo.findByProjectId(project.getId());
 				long totalFloors = towerDetailsRepo.getTotalFloorsByProjectId(project.getId());
-				projectMap.put("totalTowers", towerCount != 0 ? towerCount : 0);
-				projectMap.put("totalFloors", totalFloors != 0 ? totalFloors : 0);
+				map.put("totalTowers", towerCount);
+				map.put("totalFloors", totalFloors);
+				return map;
+			}).collect(Collectors.toList());
 
-				responseList.add(projectMap);
-			}
+			Map<String, Object> response = new HashMap<>();
+			response.put("content", content);
+			response.put("pageNumber", projectPage.getNumber() + 1);
+			response.put("pageSize", projectPage.getSize());
+			response.put("totalElements", projectPage.getTotalElements());
+			response.put("totalPages", projectPage.getTotalPages());
+			response.put("last", projectPage.isLast());
+			response.put("first", projectPage.isFirst());
+			response.put("numberOfElements", projectPage.getNumberOfElements());
+			response.put("sort", projectPage.getSort());
+			response.put("empty", projectPage.isEmpty());
 
-			return ResponseEntity.ok(responseList);
+			return ResponseEntity.ok(response);
+
 		}
 
 		catch (UserServiceException e) {
-			return ResponseEntity.status(e.getStatusCode()).body(
-					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to fetch details of projects", System.currentTimeMillis()));
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+			throw new UserServiceException(409, "Failed to fetch projects details: " + ex.getMessage());
+		}
+	}
+
+	public ResponseEntity<?> TowersDetail(String token, long projectId) {
+		try {
+			System.out.println("In serivce ");
+			if (jwtUtil.isTokenExpired(token)) {
+				System.out.println("Jwt expiration checking");
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+				System.out.println("role checking ");
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			List<TowerDetails> byProjectId = towerDetailsRepo.getByProjectId(projectId);
+			return ResponseEntity.ok(byProjectId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to fetch details of projects", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to fetch projects details: " + ex.getMessage());
+		}
+	}
+
+//	public ResponseEntity<?> flatsDetail(String token, long towerId) {
+//		try {
+//			System.out.println("In service ");
+//			if (jwtUtil.isTokenExpired(token)) {
+//				System.out.println("Jwt expiration checking");
+//				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+//						.body("Unauthorized: Your session has expired.");
+//			}
+//
+//			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+//			String role = userClaims.get("role");
+//			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+//				System.out.println("Role checking ");
+//				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+//						.body("Forbidden: You do not have the necessary permissions.");
+//			}
+//
+//			List<Flat> flats = flatRepo.findByFloor_Tower_Id(towerId);
+//
+//			Map<Integer, List<Flat>> grouped = new TreeMap<>();
+//			for (Flat flat : flats) {
+//				int flatNo = flat.getFlatNumber();
+//				int floorNumber = flatNo / 100;
+//
+//				grouped.computeIfAbsent(floorNumber, k -> new ArrayList<>()).add(flat);
+//			}
+//
+//			List<List<Flat>> result = new ArrayList<>(grouped.values());
+//			for (List<Flat> flatList : grouped.values()) {
+//	            flatList.sort(Comparator.comparingInt(Flat::getFlatNumber));
+//	            result.add(flatList);
+//	        }
+//
+//			return ResponseEntity.ok(result);
+//
+//		} catch (UserServiceException e) {
+//			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+//					"Unable to fetch details of projects", System.currentTimeMillis()));
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//			throw new UserServiceException(409, "Failed to fetch projects details: " + ex.getMessage());
+//		}
+//	}
+
+	public ResponseEntity<?> flatsDetail(String token, long towerId) {
+		try {
+			System.out.println("In service ");
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			List<Flat> flats = flatRepo.findByFloor_Tower_Id(towerId);
+
+			Set<Flat> uniqueFlats = new HashSet<>(flats);
+
+			Map<Integer, List<Flat>> grouped = new TreeMap<>();
+			for (Flat flat : uniqueFlats) {
+				int flatNo = flat.getFlatNumber();
+				int floorNumber = flatNo / 100;
+
+				grouped.computeIfAbsent(floorNumber, k -> new ArrayList<>()).add(flat);
+			}
+
+			List<List<Flat>> result = new ArrayList<>();
+			for (Map.Entry<Integer, List<Flat>> entry : grouped.entrySet()) {
+				List<Flat> sortedList = entry.getValue().stream().sorted(Comparator.comparingInt(Flat::getFlatNumber))
+						.collect(Collectors.toList());
+				result.add(sortedList);
+			}
+
+			result.forEach(list -> {
+				list.forEach(flat -> System.out.println("Flat No: " + flat.getFlatNumber()));
+			});
+
+			return ResponseEntity.ok(result);
+
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to fetch details of projects", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to fetch projects details: " + ex.getMessage());
+		}
+	}
+
+	public ResponseEntity<?> towerDetailsToFillArea(String token, long projectId, long towerId) {
+		try {
+			System.out.println("In serivce ");
+			if (jwtUtil.isTokenExpired(token)) {
+				System.out.println("Jwt expiration checking");
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+				System.out.println("role checking ");
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+			List<Flat> byProjectId = flatRepo.findFlatsByProjectIdAndTowerIdAndFlatNumberStartsWith10(projectId,
+					towerId);
+			return ResponseEntity.ok(byProjectId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to fetch details of projects", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to fetch projects details: " + ex.getMessage());
+		}
+	}
+
+	@Transactional
+	public ResponseEntity<?> updateFlatsInTower(String token, long towerId, List<Map<String, Object>> flatList) {
+		try {
+
+			if (jwtUtil.isTokenExpired(token)) {
+				System.out.println("Jwt expiration checking");
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+				System.out.println("role checking ");
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+			List<Flat> allFlats = flatRepo.findByFloor_Tower_Id(towerId);
+
+			for (Map<String, Object> flatMap : flatList) {
+				int baseFlatNumber = (int) flatMap.get("flatNumber");
+				String flatSize = (String) flatMap.get("flatSize" + " sq. ft.");
+				String flatType = flatMap.get("flatType") != null ? (String) flatMap.get("flatType") : null;
+				String status = flatMap.get("status") != null ? (String) flatMap.get("status") : null;
+
+				int unitNumber = baseFlatNumber % 100;
+
+				for (Flat flat : allFlats) {
+					if (flat.getFlatNumber() % 100 == unitNumber) {
+						flat.setFlatSize(flatSize);
+						flat.setFlatType(flatType);
+						flat.setStatus(status);
+					}
+				}
+			}
+
+			flatRepo.saveAll(allFlats);
+
+			List<Flat> updatedFlats = flatRepo.findByFloor_Tower_IdOrderByFlatNumberAsc(towerId);
+			return ResponseEntity.ok(updatedFlats);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(500).body("Failed to update flats.");
+		}
+	}
+
+	private void sendNotificationClient(Client clientUser, String message) {
+		try {
+			Notifications notification = new Notifications(false, message, clientUser.getEmail(), "Client Details",
+					System.currentTimeMillis());
+			notificationsRepository.save(notification);
+		} catch (Exception e) {
+			throw new RuntimeException("Error saving dynamic fields", e);
+		}
+	}
+
+	private void sendNotificationToUser(User user, String message) {
+		try {
+			Notifications notification = new Notifications(false, message, user.getEmail(), "Client Details",
+					System.currentTimeMillis());
+			notificationsRepository.save(notification);
+		} catch (Exception e) {
+			throw new RuntimeException("Error saving dynamic fields", e);
 		}
 	}
 }

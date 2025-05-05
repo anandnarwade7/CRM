@@ -30,9 +30,9 @@ public class ProjectDetailsController {
 	@Autowired
 	private ProjectDetailsService projectDetailsService;
 
-	@PostMapping("/create")
+	@PostMapping("/create/{userId}")
 	public ResponseEntity<?> createProjectDetails(@RequestHeader(value = "Authorization", required = true) String token,
-			@RequestBody ProjectDetails details, @RequestParam long userId) {
+			@RequestBody ProjectDetails details, @PathVariable long userId) {
 		try {
 			System.out.println("In controller ");
 			return projectDetailsService.createProjectDetails(token, details, userId);
@@ -115,32 +115,89 @@ public class ProjectDetailsController {
 		}
 	}
 
+	// main working to update status and area in sq.ft.
 	@PutMapping("/update/flat/status/{flatId}")
-	public ResponseEntity<?> updateFlatStatus(@PathVariable long flatId, @RequestParam String status) {
+	public ResponseEntity<?> updateFlatStatus(@PathVariable long flatId,
+			@RequestParam(value = "status", required = false) String status,
+			@RequestParam(value = "area", required = false) String area) {
 		try {
-			return projectDetailsService.updateFlatStatus(flatId, status);
+			return projectDetailsService.updateFlatStatus(flatId, status, area);
 		} catch (Exception ex) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update flat status.");
 		}
 	}
 
 	@PutMapping("/update/{flatId}")
-	public ResponseEntity<?> updateFlat(@PathVariable("flatId") long flatId,
+	public ResponseEntity<?> updateFlat(@RequestHeader("Authorization") String token, @PathVariable("flatId") long flatId,
 			@RequestBody Map<String, Object> requestData) {
 		try {
-			return projectDetailsService.updateFlat(flatId, requestData);
+			return projectDetailsService.updateFlat(token, flatId, requestData);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to update details of flat");
 		} catch (Exception e) {
 			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update flat");
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 
-	@GetMapping("/details")
-	public ResponseEntity<?> getProjectDetails(@RequestHeader("Authorization") String token) {
+	@GetMapping("/details/{page}")
+	public ResponseEntity<?> getProjectDetails(@RequestHeader("Authorization") String token, @PathVariable int page) {
 		try {
-			return projectDetailsService.projectsDetails(token);
+			return projectDetailsService.projectsDetails(token, page);
 		} catch (UserServiceException e) {
 			return ResponseEntity.badRequest().body("Unable to fetch details");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@GetMapping("/towerdetails/{projectId}")
+	public ResponseEntity<?> TowersDetail(@RequestHeader("Authorization") String token,
+			@PathVariable("projectId") long projectId) {
+		try {
+			return projectDetailsService.TowersDetail(token, projectId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to fetch details");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@GetMapping("/flatsdetails/{towerId}")
+	public ResponseEntity<?> flatsDetail(@RequestHeader("Authorization") String token,
+			@PathVariable("towerId") long towerId) {
+		try {
+			return projectDetailsService.flatsDetail(token, towerId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to fetch details");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@GetMapping("/gettower/{projectId}/{towerId}")
+	public ResponseEntity<?> towerDetailsToFillArea(@RequestHeader("Authorization") String token,
+			@PathVariable("projectId") long projectId, @PathVariable("towerId") long towerId) {
+		try {
+			return projectDetailsService.towerDetailsToFillArea(token, projectId, towerId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to fetch details");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@PutMapping("/update-flats/{towerId}")
+	public ResponseEntity<?> updateTowerFlats(@RequestHeader("Authorization") String token, @PathVariable long towerId,
+			@RequestBody List<Map<String, Object>> flatList) {
+		try {
+			return projectDetailsService.updateFlatsInTower(token, towerId, flatList);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to update details");
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
