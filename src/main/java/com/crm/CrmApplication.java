@@ -11,16 +11,16 @@ public class CrmApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(CrmApplication.class, args);
 
-		int[] original = { 23, 8, 63, 6, 9, 67, 55 };
-		System.out.println("Original Array: " + Arrays.toString(original));
-		System.out.println();
-
-		runBubbleSort(Arrays.copyOf(original, original.length));
-		runSelectionSort(Arrays.copyOf(original, original.length));
-		runInsertionSort(Arrays.copyOf(original, original.length));
-		runMergeSort(Arrays.copyOf(original, original.length));
-		runQuickSort(Arrays.copyOf(original, original.length));
-		runHeapSort(Arrays.copyOf(original, original.length));
+//		int[] original = { 23, 8, 63, 6, 9, 67, 55 };
+//		System.out.println("Original Array: " + Arrays.toString(original));
+//		System.out.println();
+//
+//		runBubbleSort(Arrays.copyOf(original, original.length));
+//		runSelectionSort(Arrays.copyOf(original, original.length));
+//		runInsertionSort(Arrays.copyOf(original, original.length));
+//		runMergeSort(Arrays.copyOf(original, original.length));
+//		runQuickSort(Arrays.copyOf(original, original.length));
+//		runHeapSort(Arrays.copyOf(original, original.length));
 	}
 
 	// 1. Bubble Sort

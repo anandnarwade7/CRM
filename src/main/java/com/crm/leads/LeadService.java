@@ -355,20 +355,20 @@ public class LeadService {
 
 	public ResponseEntity<?> assignLeadsToCRM() {
 		try {
-			List<User> salesUsers = userRepository.findUsersByRole("CRM");
+			List<User> crmUsers = userRepository.findUsersByRole("CRM");
 			List<LeadDetails> unassignedLeads = repository.findByAssignedTo();
 
-			if (salesUsers.isEmpty() || unassignedLeads.isEmpty()) {
+			if (crmUsers.isEmpty() || unassignedLeads.isEmpty()) {
 				return ResponseEntity.ok("No sales users or leads available for assignment.");
 			}
 
-			int totalSalesUsers = salesUsers.size();
+			int totalSalesUsers = crmUsers.size();
 			int totalLeads = unassignedLeads.size();
 			int leadsPerUser = totalLeads / totalSalesUsers;
 			int remainingLeads = totalLeads % totalSalesUsers;
 
 			int leadIndex = 0;
-			for (User salesUser : salesUsers) {
+			for (User salesUser : crmUsers) {
 				for (int j = 0; j < leadsPerUser; j++) {
 					unassignedLeads.get(leadIndex).setAssignedTo(salesUser.getId());
 					leadIndex++;
@@ -376,8 +376,8 @@ public class LeadService {
 			}
 
 			for (int i = 0; i < remainingLeads; i++) {
-				unassignedLeads.get(leadIndex).setAssignedTo(salesUsers.get(i % totalSalesUsers).getId());
-				unassignedLeads.get(leadIndex).setCrPerson(salesUsers.get(i % totalSalesUsers).getName());
+				unassignedLeads.get(leadIndex).setAssignedTo(crmUsers.get(i % totalSalesUsers).getId());
+				unassignedLeads.get(leadIndex).setCrPerson(crmUsers.get(i % totalSalesUsers).getName());
 				leadIndex++;
 			}
 

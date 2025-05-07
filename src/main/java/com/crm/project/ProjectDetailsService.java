@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.crm.Exception.Error;
 import com.crm.leads.LeadDetails;
 import com.crm.leads.LeadRepository;
@@ -36,7 +34,6 @@ import com.crm.user.UserServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 @Service
@@ -513,7 +510,7 @@ public class ProjectDetailsService {
 			String role = userClaims.get("role");
 			String email = userClaims.get("email");
 
-			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpStatus.FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
@@ -539,9 +536,9 @@ public class ProjectDetailsService {
 				}
 			}
 
-			if ("CRM".equalsIgnoreCase(role)) {
-				User crmUser = userRepository.findByEmail(email);
-				if (crmUser == null) {
+			if ("SALES".equalsIgnoreCase(role)) {
+				User salesUser = userRepository.findByEmail(email);
+				if (salesUser == null) {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("CRM user not found for email: " + email);
 				}
 
@@ -561,14 +558,15 @@ public class ProjectDetailsService {
 								.body("Client not found for email: " + lead.getLeadEmail());
 					}
 
-					flat.setCrmId(crmUser.getId());
+//					flat.setCrmId();
 					flat.setStatus(status);
-					flat.setClientsId(client.getId());
+					flat.setClientsId(salesUser.getId());
 					flat.setSalesId(lead.getSalesId());
 
-					sendNotificationToUser(crmUser, "Flat " + flatId + " booked for client " + client.getEmail());
+					sendNotificationToUser(salesUser,
+							"Flat " + flatId + " is " + status + " for client " + client.getEmail());
 					sendNotificationClient(client, "Congrats! Your flat " + flatId + " has been allocated to you by "
-							+ crmUser.getEmail() + "( " + crmUser.getRole() + " )");
+							+ salesUser.getEmail() + "( " + salesUser.getRole() + " )");
 
 				} else {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -601,7 +599,7 @@ public class ProjectDetailsService {
 			String role = userClaims.get("role");
 			String email = userClaims.get("email");
 
-			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role)) {
 				System.out.println("role checking ");
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
@@ -619,6 +617,7 @@ public class ProjectDetailsService {
 			Pageable pageable = PageRequest.of(page - 1, 10);
 //			List<ProjectDetails> byId = projectDetailsRepo.findByUserIdOrderByCreatedOnDesc(userId);
 			Page<ProjectDetails> projectPage = projectDetailsRepo.findByUserIdOrderByCreatedOnDesc(userId, pageable);
+			System.out.println("Data found ::" + projectPage.getSize());
 
 			List<Map<String, Object>> content = projectPage.getContent().stream().map(project -> {
 				Map<String, Object> map = new HashMap<>();
@@ -673,7 +672,7 @@ public class ProjectDetailsService {
 
 			Map<String, String> userClaims = jwtUtil.extractRole1(token);
 			String role = userClaims.get("role");
-			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role)) {
 				System.out.println("role checking ");
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
@@ -744,7 +743,7 @@ public class ProjectDetailsService {
 
 			Map<String, String> userClaims = jwtUtil.extractRole1(token);
 			String role = userClaims.get("role");
-			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
@@ -794,7 +793,7 @@ public class ProjectDetailsService {
 
 			Map<String, String> userClaims = jwtUtil.extractRole1(token);
 			String role = userClaims.get("role");
-			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role)) {
 				System.out.println("role checking ");
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
@@ -824,7 +823,7 @@ public class ProjectDetailsService {
 
 			Map<String, String> userClaims = jwtUtil.extractRole1(token);
 			String role = userClaims.get("role");
-			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role)) {
 				System.out.println("role checking ");
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");

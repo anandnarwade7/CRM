@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -38,6 +39,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import com.crm.Exception.Error;
+import com.crm.leads.LeadDetails;
+import com.crm.leads.LeadRepository;
 import com.crm.notifications.Notifications;
 import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
@@ -68,6 +71,9 @@ public class ImportLeadService {
 
 	@Autowired
 	private JwtUtil jwtUtil;
+
+	@Autowired
+	private LeadRepository leadRepository;
 
 //	@Autowired
 //	private LeadService leadService;
@@ -100,11 +106,10 @@ public class ImportLeadService {
 		}
 
 		Admins admins = adminRepository.findByEmail(adminEmail);
-		if (admins==null) {
-			return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
-					.body("Unable to find admins data.");
+		if (admins == null) {
+			return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN).body("Unable to find admins data.");
 		}
-		
+
 		try (InputStream inputStream = file.getInputStream(); Workbook workbook = WorkbookFactory.create(inputStream)) {
 			Sheet sheet = workbook.getSheetAt(0);
 			Iterator<Row> rowIterator = sheet.iterator();
@@ -455,7 +460,7 @@ public class ImportLeadService {
 	}
 
 	@Transactional
-	public ImportLead addConversationLogAndDynamicField(Long leadId, Status status, String comment, long dueDate,
+	public ImportLead addConversationLogAndDynamicField(Long leadId, Status status, String comment, Long dueDate,
 			List<String> key, List<Object> value) {
 
 		ImportLead lead = repository.findById(leadId)
@@ -501,6 +506,11 @@ public class ImportLeadService {
 		try {
 			if (status != null) {
 				lead.setStatus(status);
+				System.out.println("in status update");
+				if (Status.CONVERTED == status) {
+					System.out.println("if status is converted :: in status update");
+					assignAutoLeadsToCRM(lead);
+				}
 			}
 			return repository.save(lead);
 		} catch (Exception e) {
@@ -687,6 +697,88 @@ public class ImportLeadService {
 			throw new RuntimeException("Error generating Excel file: " + e.getMessage(), e);
 		}
 		return tempFile;
+	}
+
+	public ResponseEntity<?> assignAutoLeadsToCRM(ImportLead lead) {
+		try {
+
+			int skippedCount = 0;
+			int processedCount = 0;
+			List<LeadDetails> leadsToSave = new ArrayList<>();
+			Map<Long, Long> assignedLeadCounts = new HashMap<>();
+
+			List<User> crmUsers = userRepository.getByRoleAndUserId("CRM", lead.getUserId());
+
+			if (crmUsers.isEmpty()) {
+				return ResponseEntity.badRequest().body("No CRM users found for given userId");
+			}
+
+			for (User user : crmUsers) {
+				long leadCount = leadRepository.countLeadsByAssignedTo(user.getId());
+				assignedLeadCounts.put(user.getId(), leadCount);
+			}
+
+			List<Long> sortedCrmUserIds = new ArrayList<>(assignedLeadCounts.keySet());
+			sortedCrmUserIds.sort(Comparator.comparingLong(assignedLeadCounts::get));
+
+			int currentIndex = 0;
+
+			boolean exists = leadRepository.existsByLeadEmailAndAdNameAndAdSetAndCampaignAndCity(lead.getEmail(),
+					lead.getAdName(), lead.getAdSet(), lead.getCampaign(), lead.getCity());
+
+			if (exists) {
+				skippedCount++;
+			} else {
+				LeadDetails client = new LeadDetails();
+				client.setLeadName(lead.getName());
+				client.setLeadEmail(lead.getEmail());
+				client.setLeadmobile(lead.getMobileNumber());
+				client.setDate(System.currentTimeMillis());
+				client.setUserId(lead.getUserId());
+				client.setStatus(lead.getStatus());
+				client.setAdName(lead.getAdName());
+				client.setAdSet(lead.getAdSet());
+				client.setCampaign(lead.getCampaign());
+				client.setCity(lead.getCity());
+				client.setMassagesJsonData(lead.getJsonData());
+				client.setDynamicFieldsJson(lead.getDynamicFieldsJson());
+				client.setSalesId(lead.getId());
+
+				sortedCrmUserIds.sort(Comparator.comparingLong(assignedLeadCounts::get));
+				Long selectedCrmId = sortedCrmUserIds.get(currentIndex);
+
+				client.setAssignedTo(selectedCrmId);
+				User crById = userRepository.findSalesById(selectedCrmId);
+				client.setCrPerson(crById != null ? crById.getName() : "Unknown");
+
+				assignedLeadCounts.put(selectedCrmId, assignedLeadCounts.get(selectedCrmId) + 1);
+
+				currentIndex = (currentIndex + 1) % sortedCrmUserIds.size();
+
+				leadsToSave.add(client);
+				processedCount++;
+				lead.setConvertedClient(true);
+			}
+
+			leadRepository.saveAll(leadsToSave);
+
+			assignedLeadCounts.forEach((crUserId, leadCount) -> {
+				User salesUser = userRepository.findById(crUserId).orElse(null);
+				if (salesUser != null) {
+					sendNotification(salesUser, leadCount + " leads assigned to you.");
+				}
+			});
+
+			return ResponseEntity
+					.ok("File processed successfully. Processed: " + processedCount + ", Skipped: " + skippedCount);
+
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to process file", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
+		}
 	}
 
 }

@@ -149,7 +149,7 @@ public class ImportLeadController {
 
 	@PostMapping("/updateFields/{leadId}")
 	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) Status status,
-			@RequestParam(required = false) String comment, @RequestParam(required = false) long dueDate,
+			@RequestParam(required = false) String comment, @RequestParam(required = false) Long dueDate,
 			@RequestParam(required = false) List<String> key, @RequestParam(required = false) List<Object> value) {
 		try {
 			return ResponseEntity
@@ -233,6 +233,5 @@ public class ImportLeadController {
 			e.printStackTrace();
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
 	}
 }
