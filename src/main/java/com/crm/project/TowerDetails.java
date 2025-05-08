@@ -25,10 +25,12 @@ public class TowerDetails {
 	private int totalFloors;
 	private int flatPerFloor;
 
-	@ManyToOne(fetch = FetchType.LAZY)	
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "project_id")
 	@JsonIgnore
 	private ProjectDetails project;
+
+	private String layoutImage;
 
 	public long getId() {
 		return id;
@@ -78,24 +80,34 @@ public class TowerDetails {
 		this.flatPerFloor = flatPerFloor;
 	}
 
+	public String getLayoutImage() {
+		return layoutImage;
+	}
+
+	public void setLayoutImage(String layoutImage) {
+		this.layoutImage = layoutImage;
+	}
+
 	public TowerDetails() {
 	}
 
 	public TowerDetails(long id, String towerName, int totalTowers, int totalFloors, int flatPerFloor,
-			ProjectDetails project) {
+			ProjectDetails project, String layoutImage) {
 		super();
 		this.id = id;
 		this.towerName = towerName;
 		this.totalTowers = totalTowers;
 		this.totalFloors = totalFloors;
 		this.flatPerFloor = flatPerFloor;
+		this.layoutImage = layoutImage;
 		this.project = project;
 	}
 
 	@Override
 	public String toString() {
 		return "TowerDetails [id=" + id + ", towerName=" + towerName + ", totalTowers=" + totalTowers + ", totalFloors="
-				+ totalFloors + ", flatPerFloor=" + flatPerFloor + ", project=" + project + "]";
+				+ totalFloors + ", flatPerFloor=" + flatPerFloor + ", project=" + project + ", layoutImage="
+				+ layoutImage + "]";
 	}
 
 }
