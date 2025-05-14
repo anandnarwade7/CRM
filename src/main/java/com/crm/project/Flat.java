@@ -26,6 +26,7 @@ public class Flat {
 	private long clientsId;
 	private long salesId;
 	private long crmId;
+	private String flatInfo;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "floor_id")
@@ -107,8 +108,16 @@ public class Flat {
 		this.crmId = crmId;
 	}
 
+	public String getFlatInfo() {
+		return flatInfo;
+	}
+
+	public void setFlatInfo(String flatInfo) {
+		this.flatInfo = flatInfo;
+	}
+
 	public Flat(long id, int flatNumber, String flatSize, String flatType, String status, long clientsId, long salesId,
-			long crmId, FloorDetails floor) {
+			long crmId, String flatInfo, FloorDetails floor) {
 		super();
 		this.id = id;
 		this.flatNumber = flatNumber;
@@ -119,13 +128,14 @@ public class Flat {
 		this.salesId = salesId;
 		this.crmId = crmId;
 		this.floor = floor;
+		this.flatInfo = flatInfo;
 	}
 
 	@Override
 	public String toString() {
 		return "Flat [id=" + id + ", flatNumber=" + flatNumber + ", flatSize=" + flatSize + ", flatType=" + flatType
 				+ ", status=" + status + ", clientsId=" + clientsId + ", salesId=" + salesId + ", crmId=" + crmId
-				+ ", floor=" + floor + "]";
+				+ ", flatInfo=" + flatInfo + ", floor=" + floor + "]";
 	}
 
 }

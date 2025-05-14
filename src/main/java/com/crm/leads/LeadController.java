@@ -101,7 +101,7 @@ public class LeadController {
 			if (mimeType == null) {
 				mimeType = "application/octet-stream";
 			}
-			return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fname + "\"")
+			return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fname + "\"")
 					.contentType(MediaType.parseMediaType(mimeType)).body(file);
 
 		} catch (IOException e) {

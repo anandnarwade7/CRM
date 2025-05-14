@@ -2,10 +2,8 @@ package com.crm.project;
 
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.user.UserServiceException;
-
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -34,6 +29,7 @@ public class ProjectDetailsController {
 	private ProjectDetailsService projectDetailsService;
 
 	@PostMapping("/create/{userId}")
+	@Transactional
 	public ResponseEntity<?> createProjectDetails(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestBody ProjectDetails details, @PathVariable long userId) {
 		try {
@@ -64,7 +60,7 @@ public class ProjectDetailsController {
 		}
 	}
 
-	@PostMapping("/tower/create")
+//	@PostMapping("/tower/create")
 	public ResponseEntity<?> createTowerDetails1(@RequestBody List<String> requestData) {
 		try {
 			return projectDetailsService.createTower1(requestData);
@@ -73,14 +69,31 @@ public class ProjectDetailsController {
 		}
 	}
 
-	//New changes implemented for saving layout.................................................//////
-	@PostMapping(value = "/tower/create", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-	public ResponseEntity<?> createTowerDetails1(@RequestPart("towerData") List<String> towerDataList,
-			@RequestPart("layoutImages") List<MultipartFile> layoutImages) {
+	// New changes implemented for saving
+	// layout.................................................//////
+//	@PostMapping(value = "/tower/create", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+//	public ResponseEntity<?> createTowerDetails1(@RequestPart("towerData") List<String> towerDataList,
+//			@RequestPart("layoutImages") List<MultipartFile> layoutImages) {
+//		try {
+//			return projectDetailsService.createTower1(towerDataList, layoutImages);
+//		} catch (Exception ex) {
+//			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save tower details.");
+//		}
+//	}
+
+	// New changes implemented for saving
+	// layout.................................................//////
+	@PostMapping("/tower/create")
+	@Transactional
+	public ResponseEntity<?> createMultipleTowers(@RequestParam Map<String, String> towerDataList,
+			@RequestParam Map<String, MultipartFile> layoutImages) {
 		try {
-			return projectDetailsService.createTower1(towerDataList, layoutImages);
-		} catch (Exception ex) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to save tower details.");
+			Map<String, Object> response = projectDetailsService.createTowersWithLayouts(towerDataList, layoutImages);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to update details of flat");
+		} catch (Exception e) {
+			throw new UserServiceException(500, "Internal Server Error: " + e.getMessage());
 		}
 	}
 
@@ -218,4 +231,15 @@ public class ProjectDetailsController {
 		}
 	}
 
+	@GetMapping("/gettowersdetails/{towerId}")
+	public ResponseEntity<?> getDetailsOfTowerByTowerId(@PathVariable Long towerId) {
+		try {
+			return projectDetailsService.getDetailsOfTowerByTowerId(towerId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to update details");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }

@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.Exception.Error;
 import com.crm.fileHandler.FilesManager;
 import com.crm.leads.LeadDetails;
@@ -38,7 +36,6 @@ import com.crm.user.UserServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 @Service
@@ -277,15 +274,113 @@ public class ProjectDetailsService {
 			throw new UserServiceException(409, "Failed to add details: " + ex.getMessage());
 		}
 	}
-	
-	//working ...........................................................................................//////
+
+	// working
+	// ...........................................................................................//////
+//	public ResponseEntity<?> createTower1(List<String> requestData, List<MultipartFile> layoutImages) {
+//		try {
+//			if (requestData == null || requestData.isEmpty()) {
+//				throw new UserServiceException(409, "Request data list is empty or null.");
+//			}
+//			if (layoutImages == null || layoutImages.size() != requestData.size()) {
+//				throw new UserServiceException(409, "Number of images must match number of tower data entries.");
+//			}
+//
+//			List<String> successMessages = new ArrayList<>();
+//			List<String> failedMessages = new ArrayList<>();
+//			ObjectMapper objectMapper = new ObjectMapper();
+//
+//			for (int index = 0; index < requestData.size(); index++) {
+//				String jsonString = requestData.get(index);
+//				MultipartFile imageFile = layoutImages.get(index);
+//
+//				try {
+//					JsonNode jsonNode = objectMapper.readTree(jsonString);
+//
+//					String towerName = jsonNode.has("towerName") ? jsonNode.get("towerName").asText() : null;
+//					long projectId = jsonNode.has("project_id") ? jsonNode.get("project_id").asLong() : 0;
+//					int totalFloors = jsonNode.has("totalFloors") ? jsonNode.get("totalFloors").asInt() : 0;
+//					int flatPerFloor = jsonNode.has("flatPerFloor") ? jsonNode.get("flatPerFloor").asInt() : 0;
+//
+//					if (towerName == null || towerName.isEmpty()) {
+//						throw new UserServiceException(400, "Tower name is missing or empty.");
+//					}
+//					if (projectId == 0) {
+//						throw new UserServiceException(400, "Project ID is missing or invalid.");
+//					}
+//
+//					if (towerDetailsRepo.existsByTowerNameAndProjectId(towerName, projectId)) {
+//						throw new UserServiceException(409,
+//								"Tower name: " + towerName + " already exists for project ID: " + projectId);
+//					}
+//
+//					Optional<ProjectDetails> projectOpt = projectDetailsRepo.findById(projectId);
+//					if (projectOpt.isEmpty()) {
+//						throw new UserServiceException(404, "Project not found for ID: " + projectId);
+//					}
+//					ProjectDetails project = projectOpt.get();
+//
+//					TowerDetails towerDetails = new TowerDetails();
+//					towerDetails.setTowerName(towerName);
+//					towerDetails.setProject(project);
+//					towerDetails.setTotalFloors(totalFloors);
+//					towerDetails.setFlatPerFloor(flatPerFloor);
+//
+//					if (imageFile != null && !imageFile.isEmpty()) {
+//						String uploadedFilePath = fileManager.uploadFile(imageFile);
+//						towerDetails.setLayoutImage(uploadedFilePath);
+//					} else {
+//						throw new UserServiceException(400, "Layout image is missing for tower: " + towerName);
+//					}
+//
+//					TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
+//
+//					for (int floorNum = 1; floorNum <= totalFloors; floorNum++) {
+//						FloorDetails floor = new FloorDetails();
+//						floor.setFloorName("Floor " + floorNum);
+//						floor.setTower(savedTower);
+//						FloorDetails savedFloor = floorDetailsRepo.save(floor);
+//
+//						for (int flatNum = 1; flatNum <= flatPerFloor; flatNum++) {
+//							Flat flat = new Flat();
+//							int flatNumber = (floorNum * 100) + flatNum;
+//							flat.setFlatNumber(flatNumber);
+//							flat.setStatus("Available");
+//							flat.setFloor(savedFloor);
+//							flatRepo.save(flat);
+//						}
+//					}
+//
+//					successMessages.add("Tower '" + towerName + "' created successfully with layout image.");
+//
+//				} catch (JsonProcessingException e) {
+//					failedMessages.add("Invalid JSON format at index " + index + ": " + e.getOriginalMessage());
+//				} catch (UserServiceException e) {
+//					failedMessages.add("Business rule violation at index " + index + ": " + e.getMessage());
+//				} catch (Exception e) {
+//					failedMessages.add("Unexpected error at index " + index + ": " + e.getMessage());
+//				}
+//			}
+//
+//			Map<String, Object> response = new HashMap<>();
+//			response.put("success", successMessages);
+//			response.put("failed", failedMessages);
+//
+//			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+//
+//		} catch (UserServiceException e) {
+//			return ResponseEntity.status(e.getStatusCode()).body(
+//					new Error(e.getStatusCode(), e.getMessage(), "Unable to add details", System.currentTimeMillis()));
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//			throw new UserServiceException(409, "Failed to add details: " + ex.getMessage());
+//		}
+//	}
+
 	public ResponseEntity<?> createTower1(List<String> requestData, List<MultipartFile> layoutImages) {
 		try {
 			if (requestData == null || requestData.isEmpty()) {
 				throw new UserServiceException(409, "Request data list is empty or null.");
-			}
-			if (layoutImages == null || layoutImages.size() != requestData.size()) {
-				throw new UserServiceException(409, "Number of images must match number of tower data entries.");
 			}
 
 			List<String> successMessages = new ArrayList<>();
@@ -294,7 +389,9 @@ public class ProjectDetailsService {
 
 			for (int index = 0; index < requestData.size(); index++) {
 				String jsonString = requestData.get(index);
-				MultipartFile imageFile = layoutImages.get(index);
+				MultipartFile imageFile = (layoutImages != null && layoutImages.size() > index)
+						? layoutImages.get(index)
+						: null;
 
 				try {
 					JsonNode jsonNode = objectMapper.readTree(jsonString);
@@ -303,6 +400,9 @@ public class ProjectDetailsService {
 					long projectId = jsonNode.has("project_id") ? jsonNode.get("project_id").asLong() : 0;
 					int totalFloors = jsonNode.has("totalFloors") ? jsonNode.get("totalFloors").asInt() : 0;
 					int flatPerFloor = jsonNode.has("flatPerFloor") ? jsonNode.get("flatPerFloor").asInt() : 0;
+
+					// Get existing image path from JSON if present
+					String existingImage = jsonNode.has("layoutImage") ? jsonNode.get("layoutImage").asText() : null;
 
 					if (towerName == null || towerName.isEmpty()) {
 						throw new UserServiceException(400, "Tower name is missing or empty.");
@@ -328,12 +428,16 @@ public class ProjectDetailsService {
 					towerDetails.setTotalFloors(totalFloors);
 					towerDetails.setFlatPerFloor(flatPerFloor);
 
+					String finalImagePath = null;
 					if (imageFile != null && !imageFile.isEmpty()) {
-						String uploadedFilePath = fileManager.uploadFile(imageFile);
-						towerDetails.setLayoutImage(uploadedFilePath);
+						finalImagePath = fileManager.uploadFile(imageFile);
+					} else if (existingImage != null && !existingImage.isEmpty()) {
+						finalImagePath = existingImage;
 					} else {
-						throw new UserServiceException(400, "Layout image is missing for tower: " + towerName);
+						throw new UserServiceException(400, "No layout image found for tower: " + towerName);
 					}
+
+					towerDetails.setLayoutImage(finalImagePath);
 
 					TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
 
@@ -377,6 +481,97 @@ public class ProjectDetailsService {
 			ex.printStackTrace();
 			throw new UserServiceException(409, "Failed to add details: " + ex.getMessage());
 		}
+	}
+
+	private final ObjectMapper objectMapper = new ObjectMapper();
+
+	public Map<String, Object> createTowersWithLayouts(Map<String, String> requestData,
+			Map<String, MultipartFile> layoutImages) {
+
+		List<String> successMessages = new ArrayList<>();
+		List<String> failedMessages = new ArrayList<>();
+
+		int totalEntries = (int) requestData.keySet().stream().filter(k -> k.startsWith("requestData[")).count();
+
+		for (int index = 0; index < totalEntries; index++) {
+			try {
+				String jsonKey = "requestData[" + index + "]";
+				String imageKey = "layoutImages[" + index + "]";
+				String jsonString = requestData.get(jsonKey);
+				MultipartFile imageFile = layoutImages.get(imageKey);
+
+				if (jsonString == null || jsonString.isEmpty()) {
+					failedMessages.add("Missing JSON at index " + index);
+					continue;
+				}
+
+				JsonNode jsonNode = objectMapper.readTree(jsonString);
+
+				String towerName = jsonNode.has("towerName") ? jsonNode.get("towerName").asText() : null;
+				long projectId = jsonNode.has("project_id") ? jsonNode.get("project_id").asLong() : 0;
+				int totalFloors = jsonNode.has("totalFloors") ? jsonNode.get("totalFloors").asInt() : 0;
+				int flatPerFloor = jsonNode.has("flatPerFloor") ? jsonNode.get("flatPerFloor").asInt() : 0;
+
+				if (towerName == null || towerName.isEmpty()) {
+					throw new UserServiceException(400, "Tower name is missing or empty.");
+				}
+				if (projectId == 0) {
+					throw new UserServiceException(400, "Project ID is missing or invalid.");
+				}
+
+				if (towerDetailsRepo.existsByTowerNameAndProjectId(towerName, projectId)) {
+					throw new UserServiceException(409,
+							"Tower '" + towerName + "' already exists in project ID: " + projectId);
+				}
+
+				ProjectDetails project = projectDetailsRepo.findById(projectId)
+						.orElseThrow(() -> new UserServiceException(404, "Project not found for ID: " + projectId));
+
+				TowerDetails towerDetails = new TowerDetails();
+				towerDetails.setTowerName(towerName);
+				towerDetails.setProject(project);
+				towerDetails.setTotalFloors(totalFloors);
+				towerDetails.setFlatPerFloor(flatPerFloor);
+
+				if (imageFile != null && !imageFile.isEmpty()) {
+					String uploadedFilePath = fileManager.uploadFile(imageFile);
+					towerDetails.setLayoutImage(uploadedFilePath);
+				} else {
+					throw new UserServiceException(400, "Layout image is missing for tower: " + towerName);
+				}
+
+				TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
+
+				for (int floorNum = 1; floorNum <= totalFloors; floorNum++) {
+					FloorDetails floor = new FloorDetails();
+					floor.setFloorName("Floor " + floorNum);
+					floor.setTower(savedTower);
+					FloorDetails savedFloor = floorDetailsRepo.save(floor);
+
+					for (int flatNum = 1; flatNum <= flatPerFloor; flatNum++) {
+						Flat flat = new Flat();
+						flat.setFlatNumber((floorNum * 100) + flatNum);
+						flat.setStatus("Available");
+						flat.setFloor(savedFloor);
+						flatRepo.save(flat);
+					}
+				}
+
+				successMessages.add("Tower '" + towerName + "' created successfully.");
+
+			} catch (JsonProcessingException e) {
+				failedMessages.add("Invalid JSON at index " + index + ": " + e.getOriginalMessage());
+			} catch (UserServiceException e) {
+				failedMessages.add("Business rule violation at index " + index + ": " + e.getMessage());
+			} catch (Exception e) {
+				failedMessages.add("Unexpected error at index " + index + ": " + e.getMessage());
+			}
+		}
+
+		Map<String, Object> result = new HashMap<>();
+		result.put("success", successMessages);
+		result.put("failed", failedMessages);
+		return result;
 	}
 
 	public ResponseEntity<?> createFloorDetails(FloorDetails floorDetails) {
@@ -547,7 +742,7 @@ public class ProjectDetailsService {
 
 			return ResponseEntity.ok(flat);
 		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update flat status.");
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Failed to retrive details.");
 		}
 	}
 
@@ -642,6 +837,7 @@ public class ProjectDetailsService {
 			if ("ADMIN".equalsIgnoreCase(role)) {
 				if (requestData.containsKey("status")) {
 					flat.setStatus(String.valueOf(requestData.get("status")));
+					flat.setFlatInfo(String.valueOf(requestData.get("flatInfo")));
 				}
 			}
 
@@ -653,6 +849,7 @@ public class ProjectDetailsService {
 
 				if (requestData.containsKey("status") && requestData.containsKey("clientEmail")) {
 					String status = String.valueOf(requestData.get("status"));
+					String flatInfo = String.valueOf(requestData.get("flatInfo"));
 					String clientEmail = String.valueOf(requestData.get("clientEmail"));
 
 					LeadDetails lead = leadRepository.findByLeadEmail(clientEmail);
@@ -669,6 +866,7 @@ public class ProjectDetailsService {
 
 //					flat.setCrmId();
 					flat.setStatus(status);
+					flat.setFlatInfo(flatInfo);
 					flat.setClientsId(salesUser.getId());
 					flat.setSalesId(lead.getSalesId());
 
@@ -739,9 +937,9 @@ public class ProjectDetailsService {
 				map.put("updatedOn", project.getUpdatedOn());
 
 				long towerCount = towerDetailsRepo.findByProjectId(project.getId());
-				long totalFloors = towerDetailsRepo.getTotalFloorsByProjectId(project.getId());
+				Long totalFloors = towerDetailsRepo.getTotalFloorsByProjectId(project.getId());
 				map.put("totalTowers", towerCount);
-				map.put("totalFloors", totalFloors);
+				map.put("totalFloors", totalFloors != null ? totalFloors : 0L);
 				return map;
 			}).collect(Collectors.toList());
 
@@ -797,50 +995,6 @@ public class ProjectDetailsService {
 			throw new UserServiceException(409, "Failed to fetch projects details: " + ex.getMessage());
 		}
 	}
-
-//	public ResponseEntity<?> flatsDetail(String token, long towerId) {
-//		try {
-//			System.out.println("In service ");
-//			if (jwtUtil.isTokenExpired(token)) {
-//				System.out.println("Jwt expiration checking");
-//				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
-//						.body("Unauthorized: Your session has expired.");
-//			}
-//
-//			Map<String, String> userClaims = jwtUtil.extractRole1(token);
-//			String role = userClaims.get("role");
-//			if (!"ADMIN".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
-//				System.out.println("Role checking ");
-//				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
-//						.body("Forbidden: You do not have the necessary permissions.");
-//			}
-//
-//			List<Flat> flats = flatRepo.findByFloor_Tower_Id(towerId);
-//
-//			Map<Integer, List<Flat>> grouped = new TreeMap<>();
-//			for (Flat flat : flats) {
-//				int flatNo = flat.getFlatNumber();
-//				int floorNumber = flatNo / 100;
-//
-//				grouped.computeIfAbsent(floorNumber, k -> new ArrayList<>()).add(flat);
-//			}
-//
-//			List<List<Flat>> result = new ArrayList<>(grouped.values());
-//			for (List<Flat> flatList : grouped.values()) {
-//	            flatList.sort(Comparator.comparingInt(Flat::getFlatNumber));
-//	            result.add(flatList);
-//	        }
-//
-//			return ResponseEntity.ok(result);
-//
-//		} catch (UserServiceException e) {
-//			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
-//					"Unable to fetch details of projects", System.currentTimeMillis()));
-//		} catch (Exception ex) {
-//			ex.printStackTrace();
-//			throw new UserServiceException(409, "Failed to fetch projects details: " + ex.getMessage());
-//		}
-//	}
 
 	public ResponseEntity<?> flatsDetail(String token, long towerId) {
 		try {
@@ -984,6 +1138,19 @@ public class ProjectDetailsService {
 			notificationsRepository.save(notification);
 		} catch (Exception e) {
 			throw new RuntimeException("Error saving dynamic fields", e);
+		}
+	}
+
+	public ResponseEntity<?> getDetailsOfTowerByTowerId(Long towerId) {
+		try {
+			Optional<TowerDetails> tower = towerDetailsRepo.findById(towerId);
+			if (tower.isEmpty()) {
+				throw new RuntimeException("Towers Details not found with ID: " + towerId);
+			}
+			return ResponseEntity.ok(tower.get());
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+					"Unable to fetch details of tower details", System.currentTimeMillis()));
 		}
 	}
 }

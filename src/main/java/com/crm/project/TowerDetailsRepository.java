@@ -19,6 +19,6 @@ public interface TowerDetailsRepository extends JpaRepository<TowerDetails, Long
 	long findByProjectId(@Param("id") long id);
 
 	@Query("SELECT SUM(t.totalFloors) FROM TowerDetails t WHERE t.project.id = :projectId")
-	long getTotalFloorsByProjectId(@Param("projectId") Long projectId);
+	Long getTotalFloorsByProjectId(@Param("projectId") Long projectId);
 
 }

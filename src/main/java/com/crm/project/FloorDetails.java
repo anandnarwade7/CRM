@@ -52,9 +52,7 @@ public class FloorDetails {
 	public FloorDetails() {
 	}
 
-	public FloorDetails(long id, String floorName, TowerDetails tower) {
-		super();
-		this.id = id;
+	public FloorDetails(String floorName, TowerDetails tower) {
 		this.floorName = floorName;
 		this.tower = tower;
 	}
