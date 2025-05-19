@@ -235,4 +235,14 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user details");
 		}
 	}
+
+	@PostMapping("/client/sendmail/{email}")
+	public ResponseEntity<?> clientLogin(@PathVariable String email) {
+		try {
+			return service.clientLogin(email);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to login user", System.currentTimeMillis()));
+		}
+	}
 }

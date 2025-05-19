@@ -996,12 +996,12 @@ public class UserService {
 			List<Client> clients = null;
 			if ("ADMIN".equalsIgnoreCase(userRole)) {
 				Admins byEmail = adminRepository.findByEmail(email);
-				System.out.println("User  "+ byEmail);
+				System.out.println("User  " + byEmail);
 				List<User> usersByUserId = repository.findUsersByUserId(byEmail.getId());
-				System.out.println("CRMS Role: "+usersByUserId.size());
+				System.out.println("CRMS Role: " + usersByUserId.size());
 				for (User user : usersByUserId) {
 					clients = clientRepository.findClientsByUserId(user.getId());
-					System.out.println("Clients Role: " +clients);
+					System.out.println("Clients Role: " + clients);
 				}
 			} else if ("CRM".equalsIgnoreCase(userRole)) {
 				User byEmail = repository.findByEmail(email);
@@ -1009,6 +1009,22 @@ public class UserService {
 			}
 
 			return ResponseEntity.ok(clients);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find clients", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			throw new UserServiceException(409, "Invalid Credentials ");
+		}
+	}
+
+	public ResponseEntity<?> clientLogin(String email) {
+		try {
+			Client byEmail = clientRepository.findByEmail(email);
+			if (byEmail==null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Clint not found for email: " + email);
+			}
+			return ResponseEntity.ok(byEmail);
+
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find clients", System.currentTimeMillis()));
