@@ -1,5 +1,8 @@
 package com.crm.user;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,6 +10,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.apache.commons.text.RandomStringGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.crm.Exception.Error;
 import com.crm.importLead.ImportLeadRepository;
+import com.crm.mailservice.MailService;
 import com.crm.security.JwtUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +48,9 @@ public class UserService {
 
 	@Autowired
 	private JwtUtil jwtUtil;
+
+	@Autowired
+	private MailService mailService;
 
 	public String getUserObject(User user) {
 		try {
@@ -337,7 +345,7 @@ public class UserService {
 
 			User byEmail = null;
 			Admins byAdminEmail = null;
-			Client byClientEmail = null;
+//			Client byClientEmail = null;
 
 			if (role.equalsIgnoreCase("SALES") || role.equalsIgnoreCase("CRM")) {
 				byEmail = repository.findByEmail(email);
@@ -369,22 +377,24 @@ public class UserService {
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
 				}
-			} else if (role.equalsIgnoreCase("CLIENT")) {
-				byClientEmail = clientRepository.findByEmail(email);
-				if (byClientEmail == null) {
-					throw new UserServiceException(409, "Admin profile not found");
-				}
-				if (!role.equalsIgnoreCase(byClientEmail.getRole())) {
-					throw new UserServiceException(409, "Admin role mismatch");
-				}
-				System.out.println("Admin found: " + byClientEmail);
-
-				if (byClientEmail.getPassword().equals(userPassword) && byClientEmail.getAction() != Status.BLOCK) {
-					return createResponse(response, byClientEmail.getEmail(), byClientEmail.getRole());
-				} else {
-					throw new UserServiceException(409, "Invalid email and password");
-				}
-			} else {
+			}
+//			else if (role.equalsIgnoreCase("CLIENT")) {
+//				byClientEmail = clientRepository.findByEmail(email);
+//				if (byClientEmail == null) {
+//					throw new UserServiceException(409, "Admin profile not found");
+//				}
+//				if (!role.equalsIgnoreCase(byClientEmail.getRole())) {
+//					throw new UserServiceException(409, "Admin role mismatch");
+//				}
+//				System.out.println("Admin found: " + byClientEmail);
+//
+//				if (byClientEmail.getPassword().equals(userPassword) && byClientEmail.getAction() != Status.BLOCK) {
+//					return createResponse(response, byClientEmail.getEmail(), byClientEmail.getRole());
+//				} else {
+//					throw new UserServiceException(409, "Invalid email and password");
+//				}
+//			} 
+			else {
 				throw new UserServiceException(409, "Invalid role provided. Only USER or ADMIN are allowed.");
 			}
 		} catch (UserServiceException e) {
@@ -866,55 +876,89 @@ public class UserService {
 		}
 	}
 
-	public ResponseEntity<?> addClient(String token, long id, String userJson) {
+//	public ResponseEntity<?> addClient(String token, long id, String userJson) {
+//		try {
+//			System.out.println("In add client service");
+//
+//			if (jwtUtil.isTokenExpired(token)) {
+//				System.err.println("checking token" + jwtUtil.isTokenExpired(token));
+//				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+//						.body("Unauthorized: Your session has expired.");
+//			}
+//
+//			String role = jwtUtil.extractRole(token);
+//
+//			if (!"CRM".equalsIgnoreCase(role)) {
+//				System.err.println("checking token role " + !"SUPER ADMIN".equalsIgnoreCase(role));
+//				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+//						.body("Forbidden: You do not have the necessary permissions.");
+//			}
+//
+//			System.out.println("Check point 1");
+//
+//			ObjectMapper objectMapper = new ObjectMapper();
+//			JsonNode jsonNode = objectMapper.readTree(userJson);
+//			String email = jsonNode.get("email").asText();
+//			System.out.println("Check point 2 email " + email);
+//			String userObject = null;
+//			if (clientRepository.existsByEmail(email)) {
+//				Client byEmail = clientRepository.findByEmail(email);
+//				List<Long> crmIdList = byEmail.getCrmIds() != null ? new ArrayList<>(byEmail.getCrmIds())
+//						: new ArrayList<>();
+//				System.out.println("CRM id :: "+crmIdList.size()+" and values "+crmIdList.indexOf(0L));
+//				byEmail.setCrmIds(crmIdList);
+//				userObject = getUserObject1(byEmail.getRole(), email, null);
+//				clientRepository.save(byEmail);
+//			}
+////			String password = jsonNode.get("password").asText();
+//
+//			return ResponseEntity.ok(userObject);
+//		} catch (UserServiceException e) {
+//			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
+//					"Unable to register user", System.currentTimeMillis()));
+//		} catch (Exception ex) {
+//			throw new UserServiceException(409, "Invalid Credentials ");
+//		}
+//	}
+
+	public ResponseEntity<?> addClient(String token, long crmId, String userJson) {
 		try {
 			System.out.println("In add client service");
 
 			if (jwtUtil.isTokenExpired(token)) {
-				System.err.println("checking token" + jwtUtil.isTokenExpired(token));
 				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
 						.body("Unauthorized: Your session has expired.");
 			}
 
 			String role = jwtUtil.extractRole(token);
-
 			if (!"CRM".equalsIgnoreCase(role)) {
-				System.err.println("checking token role " + !"SUPER ADMIN".equalsIgnoreCase(role));
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			System.out.println("Check point 1");
-
 			ObjectMapper objectMapper = new ObjectMapper();
 			JsonNode jsonNode = objectMapper.readTree(userJson);
 			String email = jsonNode.get("email").asText();
-			System.out.println("Check point 2 email " + email);
+
+			System.out.println("Processing email: " + email + ", CRM ID: " + crmId);
+
+			String userObject = null;
 
 			if (clientRepository.existsByEmail(email)) {
-				System.err.println("Check Point 1 ");
-				throw new UserServiceException(409, "Email already exist");
-			}
-			String password = jsonNode.get("password").asText();
-			String name = jsonNode.get("name").asText();
-			String mobile = jsonNode.get("mobile").asText();
+				Client client = clientRepository.findByEmail(email);
 
-			Client client = new Client();
-			client.setName(name);
-			client.setEmail(email);
-			client.setPassword(password);
-			client.setMobile(mobile);
-			client.setAction(Status.UNBLOCK);
-			client.setUserId(id);
-			client.setRole("CLIENT");
-			clientRepository.save(client);
-			String userObject = getUserObject1(client.getRole(), email, null);
+
+
+				userObject = getUserObject1(client.getRole(), email, null);
+			}
+
 			return ResponseEntity.ok(userObject);
+
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Unable to register user", System.currentTimeMillis()));
 		} catch (Exception ex) {
-			throw new UserServiceException(409, "Invalid Credentials ");
+			throw new UserServiceException(409, "Invalid Credentials");
 		}
 	}
 
@@ -968,6 +1012,55 @@ public class UserService {
 		}
 	}
 
+//	public ResponseEntity<?> getClientsForAdmin(String token) {
+//		try {
+//			if (token == null || token.trim().isEmpty()) {
+//				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+//						.body("Unauthorized: No token provided.");
+//			}
+//
+//			System.out.println("Received token: " + token);
+//
+//			if (jwtUtil.isTokenExpired(token)) {
+//				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+//						.body("Unauthorized: Your session has expired.");
+//			}
+//
+//			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+//			String userRole = userClaims.get("role");
+//			String email = userClaims.get("email");
+//
+//			System.out.println("User Role: " + userRole + ", Email: " + email);
+//			if (!"ADMIN".equalsIgnoreCase(userRole) && !"CRM".equalsIgnoreCase(userRole)) {
+//				System.err.println("checking token role " + !"ADMIN".equalsIgnoreCase(userRole));
+//				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+//						.body("Forbidden: You do not have the necessary permissions.");
+//			}
+//
+//			List<Client> clients = null;
+//			if ("ADMIN".equalsIgnoreCase(userRole)) {
+//				Admins byEmail = adminRepository.findByEmail(email);
+//				System.out.println("User  " + byEmail);
+//				List<User> usersByUserId = repository.findUsersByUserId(byEmail.getId());
+//				System.out.println("CRMS Role: " + usersByUserId.size());
+//				for (User user : usersByUserId) {
+//					clients = clientRepository.findClientsByUserId(user.getId());
+//					System.out.println("Clients Role: " + clients);
+//				}
+//			} else if ("CRM".equalsIgnoreCase(userRole)) {
+//				User byEmail = repository.findByEmail(email);
+//				clients = clientRepository.findClientsByUserId(byEmail.getId());
+//			}
+//
+//			return ResponseEntity.ok(clients);
+//		} catch (UserServiceException e) {
+//			return ResponseEntity.status(e.getStatusCode()).body(
+//					new Error(e.getStatusCode(), e.getMessage(), "Unable to find clients", System.currentTimeMillis()));
+//		} catch (Exception ex) {
+//			throw new UserServiceException(409, "Invalid Credentials ");
+//		}
+//	}
+
 	public ResponseEntity<?> getClientsForAdmin(String token) {
 		try {
 			if (token == null || token.trim().isEmpty()) {
@@ -987,25 +1080,34 @@ public class UserService {
 			String email = userClaims.get("email");
 
 			System.out.println("User Role: " + userRole + ", Email: " + email);
-			if (!"ADMIN".equalsIgnoreCase(userRole) && !"CRM".equalsIgnoreCase(userRole)) {
-				System.err.println("checking token role " + !"ADMIN".equalsIgnoreCase(userRole));
+			if (!"ADMIN".equalsIgnoreCase(userRole) && !"SALES".equalsIgnoreCase(userRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			List<Client> clients = null;
+			List<Client> clients = new ArrayList<>();
+
 			if ("ADMIN".equalsIgnoreCase(userRole)) {
 				Admins byEmail = adminRepository.findByEmail(email);
-				System.out.println("User  " + byEmail);
-				List<User> usersByUserId = repository.findUsersByUserId(byEmail.getId());
-				System.out.println("CRMS Role: " + usersByUserId.size());
-				for (User user : usersByUserId) {
-					clients = clientRepository.findClientsByUserId(user.getId());
-					System.out.println("Clients Role: " + clients);
+				System.out.println("Admin: " + byEmail);
+
+				if (byEmail == null) {
+					return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("Admin not found.");
 				}
-			} else if ("CRM".equalsIgnoreCase(userRole)) {
-				User byEmail = repository.findByEmail(email);
-				clients = clientRepository.findClientsByUserId(byEmail.getId());
+
+				List<User> crmUsers = repository.findUsersByUserId(byEmail.getId());
+
+				if (crmUsers != null && !crmUsers.isEmpty()) {
+
+
+			
+				}
+			} else if ("SALES".equalsIgnoreCase(userRole)) {
+				User crmUser = repository.findByEmail(email);
+				if (crmUser == null) {
+					return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("CRM user not found.");
+				}
+		
 			}
 
 			return ResponseEntity.ok(clients);
@@ -1017,17 +1119,58 @@ public class UserService {
 		}
 	}
 
-	public ResponseEntity<?> clientLogin(String email) {
+	public ResponseEntity<?> sendOTPtoClientLogin(String email) {
 		try {
 			Client byEmail = clientRepository.findByEmail(email);
-			if (byEmail==null) {
+			if (byEmail == null) {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Clint not found for email: " + email);
 			}
-			return ResponseEntity.ok(byEmail);
 
+			RandomStringGenerator generator = new RandomStringGenerator.Builder().withinRange('0', '9').build();
+			String generate = generator.generate(6);
+
+			byEmail.setOtp(generate);
+			byEmail.setOtpCreationTime(LocalDateTime.now());
+
+			String clientEmail = byEmail.getEmail();
+			String subject = "Your Otp for login";
+			String message = "Welcome to CRM" + ",<br><br>" + "Dear <br>" + byEmail.getName() + ",\nYour OTP is: "
+					+ generate + "<br>Best regards,<br>CRM Team";
+
+			clientRepository.save(byEmail);
+			mailService.sendEmail(clientEmail, subject, message);
+			return ResponseEntity.ok(byEmail);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find clients", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			throw new UserServiceException(409, "Invalid Credentials ");
+		}
+	}
+
+	public ResponseEntity<?> authenticateClient(String userJson) {
+		try {
+			ObjectMapper objectMapper = new ObjectMapper();
+			JsonNode jsonNode = objectMapper.readTree(userJson);
+			String email = jsonNode.get("email").asText();
+			String generatedOtp = jsonNode.get("generatedOtp").asText();
+
+			Client byEmail = clientRepository.findByEmail(email);
+			if (byEmail == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Clint not found for email: " + email);
+			}
+			if (!generatedOtp.matches("\\d{6}")) {
+				throw new UserServiceException(400, "Invalid OTP. Must be a numeric value with exactly 6 digits.");
+			}
+			if (!byEmail.getOtp().equals(generatedOtp)) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Please provide valid otp");
+			}
+			String token = jwtUtil.createToken(email, byEmail.getRole());
+			String userObjectStr = getUserObject1(byEmail.getRole(), email, token);
+			return ResponseEntity.ok(userObjectStr);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find client", System.currentTimeMillis()));
 		} catch (Exception ex) {
 			throw new UserServiceException(409, "Invalid Credentials ");
 		}

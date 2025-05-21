@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
 @Entity
@@ -30,7 +31,13 @@ public class TowerDetails {
 	@JsonIgnore
 	private ProjectDetails project;
 
-	private String layoutImage;
+	private String evenLayout;
+	private String oddLayout;
+	private String groundLayout;
+	private String customLayout;
+	private long createdOn;
+	
+	public TowerDetails() {}
 
 	public long getId() {
 		return id;
@@ -80,34 +87,77 @@ public class TowerDetails {
 		this.flatPerFloor = flatPerFloor;
 	}
 
-	public String getLayoutImage() {
-		return layoutImage;
+	public String getEvenLayout() {
+		return evenLayout;
 	}
 
-	public void setLayoutImage(String layoutImage) {
-		this.layoutImage = layoutImage;
+	public String getOddLayout() {
+		return oddLayout;
 	}
 
-	public TowerDetails() {
+	public String getGroundLayout() {
+		return groundLayout;
+	}
+
+	public String getCustomLayout() {
+		return customLayout;
+	}
+
+	public long getCreatedOn() {
+		return createdOn;
+	}
+
+	public void setEvenLayout(String evenLayout) {
+		this.evenLayout = evenLayout;
+	}
+
+	public void setOddLayout(String oddLayout) {
+		this.oddLayout = oddLayout;
+	}
+
+	public void setGroundLayout(String groundLayout) {
+		this.groundLayout = groundLayout;
+	}
+
+	public void setCustomLayout(String customLayout) {
+		this.customLayout = customLayout;
+	}
+
+	public void setCreatedOn(long createdOn) {
+		this.createdOn = createdOn;
+	}
+
+	@PrePersist
+	protected void prePersistFunction() {
+		this.createdOn = System.currentTimeMillis();
 	}
 
 	public TowerDetails(long id, String towerName, int totalTowers, int totalFloors, int flatPerFloor,
-			ProjectDetails project, String layoutImage) {
+			ProjectDetails project, String evenLayout, String oddLayout, String groundLayout, String customLayout,
+			long createdOn) {
 		super();
 		this.id = id;
 		this.towerName = towerName;
 		this.totalTowers = totalTowers;
 		this.totalFloors = totalFloors;
 		this.flatPerFloor = flatPerFloor;
-		this.layoutImage = layoutImage;
 		this.project = project;
+		this.evenLayout = evenLayout;
+		this.oddLayout = oddLayout;
+		this.groundLayout = groundLayout;
+		this.customLayout = customLayout;
+		this.createdOn = createdOn;
 	}
 
 	@Override
 	public String toString() {
-		return "TowerDetails [id=" + id + ", towerName=" + towerName + ", totalTowers=" + totalTowers + ", totalFloors="
-				+ totalFloors + ", flatPerFloor=" + flatPerFloor + ", project=" + project + ", layoutImage="
-				+ layoutImage + "]";
+		return "TowerDetails [id=" + id + ", " + (towerName != null ? "towerName=" + towerName + ", " : "")
+				+ "totalTowers=" + totalTowers + ", totalFloors=" + totalFloors + ", flatPerFloor=" + flatPerFloor
+				+ ", " + (project != null ? "project=" + project + ", " : "")
+				+ (evenLayout != null ? "evenLayout=" + evenLayout + ", " : "")
+				+ (oddLayout != null ? "oddLayout=" + oddLayout + ", " : "")
+				+ (groundLayout != null ? "groundLayout=" + groundLayout + ", " : "")
+				+ (customLayout != null ? "customLayout=" + customLayout + ", " : "") + "createdOn=" + createdOn + "]";
 	}
 
 }

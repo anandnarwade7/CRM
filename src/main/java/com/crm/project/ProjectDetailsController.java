@@ -1,7 +1,10 @@
 package com.crm.project;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
 import com.crm.user.UserServiceException;
+
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -86,8 +91,20 @@ public class ProjectDetailsController {
 	@PostMapping("/tower/create")
 	@Transactional
 	public ResponseEntity<?> createMultipleTowers(@RequestParam Map<String, String> towerDataList,
-			@RequestParam Map<String, MultipartFile> layoutImages) {
+			@RequestParam("oddLayout") List<MultipartFile> oddLayouts,
+			@RequestParam("evenLayout") List<MultipartFile> evenLayouts,
+			@RequestParam("groundLayout") List<MultipartFile> groundLayouts,
+			@RequestParam("customLayout") List<MultipartFile> customLayouts) {
 		try {
+			List<Map<String, MultipartFile>> layoutImages = new ArrayList<>();
+			for (int i = 0; i < oddLayouts.size(); i++) {
+				Map<String, MultipartFile> layoutMap = new HashMap<>();
+				layoutMap.put("oddLayout", oddLayouts.get(i));
+				layoutMap.put("evenLayout", evenLayouts.get(i));
+				layoutMap.put("groundLayout", groundLayouts.get(i));
+				layoutMap.put("customLayout", customLayouts.get(i));
+				layoutImages.add(layoutMap);
+			}
 			Map<String, Object> response = projectDetailsService.createTowersWithLayouts(towerDataList, layoutImages);
 			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
 		} catch (UserServiceException e) {

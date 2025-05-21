@@ -13,9 +13,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.crm.Exception.Error;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
@@ -239,7 +237,19 @@ public class UserController {
 	@PostMapping("/client/sendmail/{email}")
 	public ResponseEntity<?> clientLogin(@PathVariable String email) {
 		try {
-			return service.clientLogin(email);
+			return service.sendOTPtoClientLogin(email);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to login user", System.currentTimeMillis()));
+		}
+	}
+	
+	@CrossOrigin(origins = { ("http://localhost:3000") })
+	@PostMapping("/client/login")
+	public ResponseEntity<?> authenticateClient(@RequestBody String userJson) {
+		try {
+			System.out.println("Check Point 0 :::: in Controller client login ");
+			return service.authenticateClient(userJson);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to login user", System.currentTimeMillis()));

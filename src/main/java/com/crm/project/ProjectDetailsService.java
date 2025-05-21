@@ -437,7 +437,7 @@ public class ProjectDetailsService {
 						throw new UserServiceException(400, "No layout image found for tower: " + towerName);
 					}
 
-					towerDetails.setLayoutImage(finalImagePath);
+//					towerDetails.setLayoutImage(finalImagePath);
 
 					TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
 
@@ -486,7 +486,7 @@ public class ProjectDetailsService {
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	public Map<String, Object> createTowersWithLayouts(Map<String, String> requestData,
-			Map<String, MultipartFile> layoutImages) {
+			List<Map<String, MultipartFile>> layoutImages) {
 
 		List<String> successMessages = new ArrayList<>();
 		List<String> failedMessages = new ArrayList<>();
@@ -496,9 +496,10 @@ public class ProjectDetailsService {
 		for (int index = 0; index < totalEntries; index++) {
 			try {
 				String jsonKey = "requestData[" + index + "]";
-				String imageKey = "layoutImages[" + index + "]";
 				String jsonString = requestData.get(jsonKey);
-				MultipartFile imageFile = layoutImages.get(imageKey);
+				
+//				MultipartFile imageFile = layoutImages.get(imageKey);
+			
 
 				if (jsonString == null || jsonString.isEmpty()) {
 					failedMessages.add("Missing JSON at index " + index);
@@ -533,12 +534,28 @@ public class ProjectDetailsService {
 				towerDetails.setTotalFloors(totalFloors);
 				towerDetails.setFlatPerFloor(flatPerFloor);
 
-				if (imageFile != null && !imageFile.isEmpty()) {
-					String uploadedFilePath = fileManager.uploadFile(imageFile);
-					towerDetails.setLayoutImage(uploadedFilePath);
-				} else {
-					throw new UserServiceException(400, "Layout image is missing for tower: " + towerName);
-				}
+//				if (imageFile != null && !imageFile.isEmpty()) {
+//					String uploadedFilePath = fileManager.uploadFile(imageFile);
+//					towerDetails.setLayoutImage(uploadedFilePath);
+//				} else {
+//					throw new UserServiceException(400, "Layout image is missing for tower: " + towerName);
+//				}
+				
+			     if (index >= layoutImages.size()) {
+		                throw new UserServiceException(400, "Missing layout images for index: " + index);
+		            }
+
+		            Map<String, MultipartFile> layoutImageMap = layoutImages.get(index);
+
+		            String evenLayout = uploadLayoutImage(layoutImageMap.get("evenLayout"), "evenLayout", towerName);
+		            String oddLayout = uploadLayoutImage(layoutImageMap.get("oddLayout"), "oddLayout", towerName);
+		            String groundLayout = uploadLayoutImage(layoutImageMap.get("groundLayout"), "groundLayout", towerName);
+		            String customLayout = uploadLayoutImage(layoutImageMap.get("customLayout"), "customLayout", towerName);
+		            towerDetails.setEvenLayout(evenLayout);
+		            towerDetails.setOddLayout(oddLayout);
+		            towerDetails.setGroundLayout(groundLayout);
+		            towerDetails.setCustomLayout(customLayout);
+		            
 
 				TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
 
@@ -572,6 +589,13 @@ public class ProjectDetailsService {
 		result.put("success", successMessages);
 		result.put("failed", failedMessages);
 		return result;
+	}
+	
+	private String uploadLayoutImage(MultipartFile file, String layoutType, String towerName) {
+	    if (file == null || file.isEmpty()) {
+	        throw new UserServiceException(400, layoutType + " image is missing for tower: " + towerName);
+	    }
+	    return fileManager.uploadFile(file);
 	}
 
 	public ResponseEntity<?> createFloorDetails(FloorDetails floorDetails) {

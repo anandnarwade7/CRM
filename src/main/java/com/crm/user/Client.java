@@ -1,15 +1,18 @@
 package com.crm.user;
 
 import java.time.LocalDateTime;
-
+import java.util.List;
 import jakarta.annotation.Nullable;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PostPersist;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -36,10 +39,16 @@ public class Client {
 	private long createdOn;
 	private long updatedOn;
 	private String profilePic;
-	private long userId;
+//	private long userId;
+	@ElementCollection
+	@CollectionTable(name = "client_sales_ids", joinColumns = @JoinColumn(name = "client_id"))
+	@Column(name = "sales_id")
+	private List<Long> salesId;
 
-	public Client() {
-	}
+	@ElementCollection
+	@CollectionTable(name = "client_crm_ids", joinColumns = @JoinColumn(name = "client_id"))
+	@Column(name = "crm_id")
+	private List<Long> crmIds;
 
 	public long getId() {
 		return id;
@@ -89,8 +98,8 @@ public class Client {
 		return profilePic;
 	}
 
-	public long getUserId() {
-		return userId;
+	public List<Long> getCrmIds() {
+		return crmIds;
 	}
 
 	public void setId(long id) {
@@ -141,8 +150,8 @@ public class Client {
 		this.profilePic = profilePic;
 	}
 
-	public void setUserId(long userId) {
-		this.userId = userId;
+	public void setCrmIds(List<Long> crmIds) {
+		this.crmIds = crmIds;
 	}
 
 	@PrePersist
@@ -155,8 +164,33 @@ public class Client {
 		this.updatedOn = System.currentTimeMillis();
 	}
 
+	public Client() {
+	}
+
+	public List<Long> getSalesId() {
+		return salesId;
+	}
+
+	public void setSalesId(List<Long> salesId) {
+		this.salesId = salesId;
+	}
+
+	@Override
+	public String toString() {
+		return "Client [id=" + id + ", " + (role != null ? "role=" + role + ", " : "")
+				+ (name != null ? "name=" + name + ", " : "") + (email != null ? "email=" + email + ", " : "")
+				+ (mobile != null ? "mobile=" + mobile + ", " : "") + (action != null ? "action=" + action + ", " : "")
+				+ (password != null ? "password=" + password + ", " : "") + (otp != null ? "otp=" + otp + ", " : "")
+				+ (otpCreationTime != null ? "otpCreationTime=" + otpCreationTime + ", " : "") + "createdOn="
+				+ createdOn + ", updatedOn=" + updatedOn + ", "
+				+ (profilePic != null ? "profilePic=" + profilePic + ", " : "")
+				+ (salesId != null ? "salesId=" + salesId + ", " : "") + (crmIds != null ? "crmIds=" + crmIds : "")
+				+ "]";
+	}
+
 	public Client(long id, String role, String name, String email, String mobile, Status action, String password,
-			String otp, LocalDateTime otpCreationTime, long createdOn, long updatedOn, String profilePic, long userId) {
+			String otp, LocalDateTime otpCreationTime, long createdOn, long updatedOn, String profilePic,
+			List<Long> salesId, List<Long> crmIds) {
 		super();
 		this.id = id;
 		this.role = role;
@@ -170,15 +204,8 @@ public class Client {
 		this.createdOn = createdOn;
 		this.updatedOn = updatedOn;
 		this.profilePic = profilePic;
-		this.userId = userId;
-	}
-
-	@Override
-	public String toString() {
-		return "Client [id=" + id + ", role=" + role + ", name=" + name + ", email=" + email + ", mobile=" + mobile
-				+ ", action=" + action + ", password=" + password + ", otp=" + otp + ", otpCreationTime="
-				+ otpCreationTime + ", createdOn=" + createdOn + ", updatedOn=" + updatedOn + ", profilePic="
-				+ profilePic + ", userId=" + userId + "]";
+		this.salesId = salesId;
+		this.crmIds = crmIds;
 	}
 
 }

@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -46,6 +47,8 @@ import com.crm.notifications.NotificationsRepository;
 import com.crm.security.JwtUtil;
 import com.crm.user.Admins;
 import com.crm.user.AdminsRepository;
+import com.crm.user.Client;
+import com.crm.user.ClientRepository;
 import com.crm.user.Status;
 import com.crm.user.User;
 import com.crm.user.UserRepository;
@@ -65,6 +68,9 @@ public class ImportLeadService {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private ClientRepository clientRepository;
 
 	@Autowired
 	private AdminsRepository adminRepository;
@@ -760,7 +766,11 @@ public class ImportLeadService {
 				lead.setConvertedClient(true);
 			}
 
-			leadRepository.saveAll(leadsToSave);
+			List<LeadDetails> clientsList = leadRepository.saveAll(leadsToSave);
+			clientsList.forEach(leads -> {
+				System.out.println("Passing to upsertClientByEmailAndUserId -> " + leads);
+			
+			});
 
 			assignedLeadCounts.forEach((crUserId, leadCount) -> {
 				User salesUser = userRepository.findById(crUserId).orElse(null);
@@ -780,5 +790,7 @@ public class ImportLeadService {
 			throw new UserServiceException(409, "Failed to process file: " + ex.getMessage());
 		}
 	}
+
+	
 
 }
