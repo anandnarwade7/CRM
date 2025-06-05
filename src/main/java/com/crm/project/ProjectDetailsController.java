@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.crm.user.UserServiceException;
-
 import jakarta.transaction.Transactional;
 
 @RestController
@@ -88,31 +86,78 @@ public class ProjectDetailsController {
 
 	// New changes implemented for saving
 	// layout.................................................//////
+//	@PostMapping("/tower/create")
+//	@Transactional
+//	public ResponseEntity<?> createMultipleTowers(@RequestParam Map<String, String> towerDataList,
+//			@RequestParam("oddLayout") List<MultipartFile> oddLayouts,
+//			@RequestParam("evenLayout") List<MultipartFile> evenLayouts,
+//			@RequestParam("groundLayout") List<MultipartFile> groundLayouts,
+//			@RequestParam("customLayout") List<MultipartFile> customLayouts) {
+//		try {
+//			List<Map<String, MultipartFile>> layoutImages = new ArrayList<>();
+//			for (int i = 0; i < oddLayouts.size(); i++) {
+//				Map<String, MultipartFile> layoutMap = new HashMap<>();
+//				layoutMap.put("oddLayout", oddLayouts.get(i));
+//				layoutMap.put("evenLayout", evenLayouts.get(i));
+//				layoutMap.put("groundLayout", groundLayouts.get(i));
+//				layoutMap.put("customLayout", customLayouts.get(i));
+//				layoutImages.add(layoutMap);
+//			}
+//			Map<String, Object> response = projectDetailsService.createTowersWithLayouts(towerDataList, layoutImages);
+//			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+//		} catch (UserServiceException e) {
+//			return ResponseEntity.badRequest().body("Unable to update details of flat");
+//		} catch (Exception e) {
+//			throw new UserServiceException(500, "Internal Server Error: " + e.getMessage());
+//		}
+//	}
+
 	@PostMapping("/tower/create")
 	@Transactional
-	public ResponseEntity<?> createMultipleTowers(@RequestParam Map<String, String> towerDataList,
-			@RequestParam("oddLayout") List<MultipartFile> oddLayouts,
-			@RequestParam("evenLayout") List<MultipartFile> evenLayouts,
-			@RequestParam("groundLayout") List<MultipartFile> groundLayouts,
-			@RequestParam("customLayout") List<MultipartFile> customLayouts) {
-		try {
-			List<Map<String, MultipartFile>> layoutImages = new ArrayList<>();
-			for (int i = 0; i < oddLayouts.size(); i++) {
-				Map<String, MultipartFile> layoutMap = new HashMap<>();
-				layoutMap.put("oddLayout", oddLayouts.get(i));
-				layoutMap.put("evenLayout", evenLayouts.get(i));
-				layoutMap.put("groundLayout", groundLayouts.get(i));
-				layoutMap.put("customLayout", customLayouts.get(i));
-				layoutImages.add(layoutMap);
-			}
-			Map<String, Object> response = projectDetailsService.createTowersWithLayouts(towerDataList, layoutImages);
-			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
-		} catch (UserServiceException e) {
-			return ResponseEntity.badRequest().body("Unable to update details of flat");
-		} catch (Exception e) {
-			throw new UserServiceException(500, "Internal Server Error: " + e.getMessage());
-		}
+	public ResponseEntity<?> createMultipleTowers(
+	        @RequestParam Map<String, String> requestData,
+	        @RequestParam MultiValueMap<String, MultipartFile> multipartFiles) {
+	 
+	    try {
+	        // Organize layout images by tower index
+	        Map<Integer, Map<String, MultipartFile>> indexedLayouts = new HashMap<>();
+	 
+	        for (Map.Entry<String, List<MultipartFile>> entry : multipartFiles.entrySet()) {
+	            String rawKey = entry.getKey(); // e.g., "oddLayout[0]", "blueprint[1]", etc.
+	            List<MultipartFile> files = entry.getValue();
+	 
+	            if (files == null || files.isEmpty()) continue;
+	 
+	            String layoutType;
+	            int index;
+	 
+	            try {
+	                layoutType = rawKey.substring(0, rawKey.indexOf("["));
+	                index = Integer.parseInt(rawKey.substring(rawKey.indexOf("[") + 1, rawKey.indexOf("]")));
+	            } catch (Exception e) {
+	                continue; // Skip invalid keys
+	            }
+	 
+	            Map<String, MultipartFile> layoutMap = indexedLayouts.computeIfAbsent(index, k -> new HashMap<>());
+	            layoutMap.put(layoutType, files.get(0)); // only first file is considered per key
+	        }
+	 
+	        // Convert to list ordered by index
+	        List<Map<String, MultipartFile>> layoutImages = new ArrayList<>();
+	        for (int i = 0; i < indexedLayouts.size(); i++) {
+	            layoutImages.add(indexedLayouts.getOrDefault(i, new HashMap<>()));
+	        }
+	 
+	        Map<String, Object> response = projectDetailsService.createTowersWithLayouts(requestData, layoutImages);
+	        return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+	 
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body("Error processing tower creation: " + e.getMessage());
+	    }
 	}
+	 
+	 
 
 	@PostMapping("/floor/create")
 	public ResponseEntity<?> createFloorDetails(@RequestBody FloorDetails floorDetails) {

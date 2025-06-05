@@ -6,10 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.crm.notifications.Notifications;
+import com.crm.notifications.NotificationsRepository;
 import com.crm.support.Support;
 import com.crm.support.SupportRepository;
 import com.crm.user.User;
@@ -27,6 +31,9 @@ public class ChatsService {
 
 	@Autowired
 	private ChatsRepository chatsRepository;
+	
+	@Autowired
+	private NotificationsRepository notificationsRepository;
 
 	@Transactional
 	public ResponseEntity<Chats> addChats(Chats chats) {
@@ -50,14 +57,14 @@ public class ChatsService {
 				if (chats.getUserId() == supportUserId.getId()) {
 					List<User> admins = userRepository.findByRole("Admin");
 					for (User admin : admins) {
-//						Notifications notification = new Notifications(false, notificationMessage, admin.getEmail(),
-//								"checkComments", System.currentTimeMillis());
-//						notificationsRepository.save(notification);
+						Notifications notification = new Notifications(false, notificationMessage, admin.getEmail(),
+								"checkComments", System.currentTimeMillis());
+						notificationsRepository.save(notification);
 					}
 				} else {
-//					Notifications notification = new Notifications(false, notificationMessage, supportUser.getEmail(),
-//							"checkCohats", System.currentTimeMillis());
-//					notificationsRepository.save(notification);
+					Notifications notification = new Notifications(false, notificationMessage, supportUserId.getEmail(),
+							"checkCohats", System.currentTimeMillis());
+					notificationsRepository.save(notification);
 				}
 				return ResponseEntity.ok(newChats);
 			} else {

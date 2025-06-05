@@ -947,7 +947,19 @@ public class UserService {
 			if (clientRepository.existsByEmail(email)) {
 				Client client = clientRepository.findByEmail(email);
 
+				List<Long> crmIdList = client.getCrmIds() != null ? new ArrayList<>(client.getCrmIds())
+						: new ArrayList<>();
 
+				System.out.println("Existing CRM IDs: " + crmIdList);
+
+				if (!crmIdList.contains(crmId)) {
+					crmIdList.add(crmId);
+					client.setCrmIds(crmIdList);
+					clientRepository.save(client);
+					System.out.println("CRM ID " + crmId + " added to client.");
+				} else {
+					System.out.println("CRM ID " + crmId + " already exists. Not adding again.");
+				}
 
 				userObject = getUserObject1(client.getRole(), email, null);
 			}
@@ -1098,16 +1110,19 @@ public class UserService {
 				List<User> crmUsers = repository.findUsersByUserId(byEmail.getId());
 
 				if (crmUsers != null && !crmUsers.isEmpty()) {
+					List<Long> crmIds = crmUsers.stream().map(User::getId).collect(Collectors.toList());
 
-
-			
+					clients = clientRepository.findByCrmIdIn(crmIds);
 				}
 			} else if ("SALES".equalsIgnoreCase(userRole)) {
 				User crmUser = repository.findByEmail(email);
 				if (crmUser == null) {
 					return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("CRM user not found.");
 				}
-		
+				List<Long> crmIdList = crmUser.getId() != 0
+						? new ArrayList<>(Collections.singletonList(crmUser.getId()))
+						: new ArrayList<>();
+				clients = clientRepository.findBySalesIdIn(crmIdList);
 			}
 
 			return ResponseEntity.ok(clients);

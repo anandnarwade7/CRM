@@ -39,4 +39,6 @@ public interface ImportLeadRepository extends JpaRepository<ImportLead, Long> {
 	
 	List<ImportLead> findByStatusAndConvertedClient(Status status, boolean convertedClient);
 
+	List<ImportLead> findByAssignedTo(Long userId);
+
 }

@@ -1,7 +1,13 @@
 package com.crm.project;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -9,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -35,9 +42,17 @@ public class TowerDetails {
 	private String oddLayout;
 	private String groundLayout;
 	private String customLayout;
+
+	@ElementCollection
+	@CollectionTable(name = "tower_custom_layouts", joinColumns = @JoinColumn(name = "tower_id"))
+	@MapKeyColumn(name = "layout_name")
+	@Column(name = "layout_file_path")
+	private Map<String, String> customLayouts = new HashMap<>();
+
 	private long createdOn;
-	
-	public TowerDetails() {}
+
+	public TowerDetails() {
+	}
 
 	public long getId() {
 		return id;
@@ -132,9 +147,17 @@ public class TowerDetails {
 		this.createdOn = System.currentTimeMillis();
 	}
 
+	public Map<String, String> getCustomLayouts() {
+		return customLayouts;
+	}
+
+	public void setCustomLayouts(Map<String, String> customLayouts) {
+		this.customLayouts = customLayouts;
+	}
+
 	public TowerDetails(long id, String towerName, int totalTowers, int totalFloors, int flatPerFloor,
 			ProjectDetails project, String evenLayout, String oddLayout, String groundLayout, String customLayout,
-			long createdOn) {
+			Map<String, String> customLayouts, long createdOn) {
 		super();
 		this.id = id;
 		this.towerName = towerName;
@@ -146,6 +169,7 @@ public class TowerDetails {
 		this.oddLayout = oddLayout;
 		this.groundLayout = groundLayout;
 		this.customLayout = customLayout;
+		this.customLayouts = customLayouts;
 		this.createdOn = createdOn;
 	}
 
@@ -157,7 +181,14 @@ public class TowerDetails {
 				+ (evenLayout != null ? "evenLayout=" + evenLayout + ", " : "")
 				+ (oddLayout != null ? "oddLayout=" + oddLayout + ", " : "")
 				+ (groundLayout != null ? "groundLayout=" + groundLayout + ", " : "")
-				+ (customLayout != null ? "customLayout=" + customLayout + ", " : "") + "createdOn=" + createdOn + "]";
+				+ (customLayout != null ? "customLayout=" + customLayout + ", " : "")
+				+ (customLayouts != null ? "customLayouts=" + customLayouts + ", " : "") + "createdOn=" + createdOn
+				+ "]";
+	}
+
+	public void setCustomLayouts(String orDefault) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

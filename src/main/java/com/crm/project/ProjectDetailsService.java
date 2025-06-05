@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
 import com.crm.Exception.Error;
 import com.crm.fileHandler.FilesManager;
 import com.crm.leads.LeadDetails;
@@ -36,6 +38,7 @@ import com.crm.user.UserServiceException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpServletResponse;
 
 @Service
@@ -73,6 +76,9 @@ public class ProjectDetailsService {
 
 	@Autowired
 	private FilesManager fileManager;
+
+	@Autowired
+	private FlatBookDetailsRepository bookDetailsRepository;
 
 	@Transactional
 	public ResponseEntity<?> createProjectDetails(String token, ProjectDetails details, long userId) {
@@ -485,6 +491,119 @@ public class ProjectDetailsService {
 
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
+//	public Map<String, Object> createTowersWithLayouts(Map<String, String> requestData,
+//			List<Map<String, MultipartFile>> layoutImages) {
+//
+//		List<String> successMessages = new ArrayList<>();
+//		List<String> failedMessages = new ArrayList<>();
+//
+//		int totalEntries = (int) requestData.keySet().stream().filter(k -> k.startsWith("requestData[")).count();
+//
+//		for (int index = 0; index < totalEntries; index++) {
+//			try {
+//				String jsonKey = "requestData[" + index + "]";
+//				String jsonString = requestData.get(jsonKey);
+//				
+////				MultipartFile imageFile = layoutImages.get(imageKey);
+//			
+//
+//				if (jsonString == null || jsonString.isEmpty()) {
+//					failedMessages.add("Missing JSON at index " + index);
+//					continue;
+//				}
+//
+//				JsonNode jsonNode = objectMapper.readTree(jsonString);
+//
+//				String towerName = jsonNode.has("towerName") ? jsonNode.get("towerName").asText() : null;
+//				long projectId = jsonNode.has("project_id") ? jsonNode.get("project_id").asLong() : 0;
+//				int totalFloors = jsonNode.has("totalFloors") ? jsonNode.get("totalFloors").asInt() : 0;
+//				int flatPerFloor = jsonNode.has("flatPerFloor") ? jsonNode.get("flatPerFloor").asInt() : 0;
+//
+//				if (towerName == null || towerName.isEmpty()) {
+//					throw new UserServiceException(400, "Tower name is missing or empty.");
+//				}
+//				if (projectId == 0) {
+//					throw new UserServiceException(400, "Project ID is missing or invalid.");
+//				}
+//
+//				if (towerDetailsRepo.existsByTowerNameAndProjectId(towerName, projectId)) {
+//					throw new UserServiceException(409,
+//							"Tower '" + towerName + "' already exists in project ID: " + projectId);
+//				}
+//
+//				ProjectDetails project = projectDetailsRepo.findById(projectId)
+//						.orElseThrow(() -> new UserServiceException(404, "Project not found for ID: " + projectId));
+//
+//				TowerDetails towerDetails = new TowerDetails();
+//				towerDetails.setTowerName(towerName);
+//				towerDetails.setProject(project);
+//				towerDetails.setTotalFloors(totalFloors);
+//				towerDetails.setFlatPerFloor(flatPerFloor);
+//
+////				if (imageFile != null && !imageFile.isEmpty()) {
+////					String uploadedFilePath = fileManager.uploadFile(imageFile);
+////					towerDetails.setLayoutImage(uploadedFilePath);
+////				} else {
+////					throw new UserServiceException(400, "Layout image is missing for tower: " + towerName);
+////				}
+//				
+//			     if (index >= layoutImages.size()) {
+//		                throw new UserServiceException(400, "Missing layout images for index: " + index);
+//		            }
+//
+//		            Map<String, MultipartFile> layoutImageMap = layoutImages.get(index);
+//
+//		            String evenLayout = uploadLayoutImage(layoutImageMap.get("evenLayout"), "evenLayout", towerName);
+//		            String oddLayout = uploadLayoutImage(layoutImageMap.get("oddLayout"), "oddLayout", towerName);
+//		            String groundLayout = uploadLayoutImage(layoutImageMap.get("groundLayout"), "groundLayout", towerName);
+//		            String customLayout = uploadLayoutImage(layoutImageMap.get("customLayout"), "customLayout", towerName);
+//		            towerDetails.setEvenLayout(evenLayout);
+//		            towerDetails.setOddLayout(oddLayout);
+//		            towerDetails.setGroundLayout(groundLayout);
+//		            towerDetails.setCustomLayout(customLayout);
+//		            
+//
+//				TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
+//
+//				for (int floorNum = 1; floorNum <= totalFloors; floorNum++) {
+//					FloorDetails floor = new FloorDetails();
+//					floor.setFloorName("Floor " + floorNum);
+//					floor.setTower(savedTower);
+//					FloorDetails savedFloor = floorDetailsRepo.save(floor);
+//
+//					for (int flatNum = 1; flatNum <= flatPerFloor; flatNum++) {
+//						Flat flat = new Flat();
+//						flat.setFlatNumber((floorNum * 100) + flatNum);
+//						flat.setStatus("Available");
+//						flat.setFloor(savedFloor);
+//						flatRepo.save(flat);
+//					}
+//				}
+//
+//				successMessages.add("Tower '" + towerName + "' created successfully.");
+//
+//			} catch (JsonProcessingException e) {
+//				failedMessages.add("Invalid JSON at index " + index + ": " + e.getOriginalMessage());
+//			} catch (UserServiceException e) {
+//				failedMessages.add("Business rule violation at index " + index + ": " + e.getMessage());
+//			} catch (Exception e) {
+//				failedMessages.add("Unexpected error at index " + index + ": " + e.getMessage());
+//			}
+//		}
+//
+//		Map<String, Object> result = new HashMap<>();
+//		result.put("success", successMessages);
+//		result.put("failed", failedMessages);
+//		return result;
+//	}
+
+//	private String uploadLayoutImage(MultipartFile file, String layoutType, String towerName) {
+//		if (file == null || file.isEmpty()) {
+//			throw new UserServiceException(400, layoutType + " image is missing for tower: " + towerName);
+//		}
+//		return fileManager.uploadFile(file);
+//	}
+
 	public Map<String, Object> createTowersWithLayouts(Map<String, String> requestData,
 			List<Map<String, MultipartFile>> layoutImages) {
 
@@ -497,9 +616,6 @@ public class ProjectDetailsService {
 			try {
 				String jsonKey = "requestData[" + index + "]";
 				String jsonString = requestData.get(jsonKey);
-				
-//				MultipartFile imageFile = layoutImages.get(imageKey);
-			
 
 				if (jsonString == null || jsonString.isEmpty()) {
 					failedMessages.add("Missing JSON at index " + index);
@@ -516,6 +632,7 @@ public class ProjectDetailsService {
 				if (towerName == null || towerName.isEmpty()) {
 					throw new UserServiceException(400, "Tower name is missing or empty.");
 				}
+
 				if (projectId == 0) {
 					throw new UserServiceException(400, "Project ID is missing or invalid.");
 				}
@@ -534,29 +651,30 @@ public class ProjectDetailsService {
 				towerDetails.setTotalFloors(totalFloors);
 				towerDetails.setFlatPerFloor(flatPerFloor);
 
-//				if (imageFile != null && !imageFile.isEmpty()) {
-//					String uploadedFilePath = fileManager.uploadFile(imageFile);
-//					towerDetails.setLayoutImage(uploadedFilePath);
-//				} else {
-//					throw new UserServiceException(400, "Layout image is missing for tower: " + towerName);
-//				}
-				
-			     if (index >= layoutImages.size()) {
-		                throw new UserServiceException(400, "Missing layout images for index: " + index);
-		            }
+				if (index >= layoutImages.size()) {
+					throw new UserServiceException(400, "Missing layout images for index: " + index);
+				}
 
-		            Map<String, MultipartFile> layoutImageMap = layoutImages.get(index);
+				Map<String, MultipartFile> layoutImageMap = layoutImages.get(index);
 
-		            String evenLayout = uploadLayoutImage(layoutImageMap.get("evenLayout"), "evenLayout", towerName);
-		            String oddLayout = uploadLayoutImage(layoutImageMap.get("oddLayout"), "oddLayout", towerName);
-		            String groundLayout = uploadLayoutImage(layoutImageMap.get("groundLayout"), "groundLayout", towerName);
-		            String customLayout = uploadLayoutImage(layoutImageMap.get("customLayout"), "customLayout", towerName);
-		            towerDetails.setEvenLayout(evenLayout);
-		            towerDetails.setOddLayout(oddLayout);
-		            towerDetails.setGroundLayout(groundLayout);
-		            towerDetails.setCustomLayout(customLayout);
-		            
+//				String evenLayout = uploadLayoutImage(layoutImageMap.get("evenLayout"), "evenLayout", towerName);
+//				String oddLayout = uploadLayoutImage(layoutImageMap.get("oddLayout"), "oddLayout", towerName);
+//				String groundLayout = uploadLayoutImage(layoutImageMap.get("groundLayout"), "groundLayout", towerName);
 
+//				towerDetails.setEvenLayout(evenLayout);
+//				towerDetails.setOddLayout(oddLayout);
+//				towerDetails.setGroundLayout(groundLayout);
+
+				Map<String, String> customLayoutMap = new HashMap<>();
+				for (Map.Entry<String, MultipartFile> entry : layoutImageMap.entrySet()) {
+					String layoutKey = entry.getKey();
+//					if (!List.of("oddLayout", "evenLayout", "groundLayout").contains(layoutKey)) {
+					String uploadedPath = uploadLayoutImage(entry.getValue(), layoutKey, towerName);
+					customLayoutMap.put(layoutKey, uploadedPath);
+//					}
+				}
+
+				towerDetails.setCustomLayouts(customLayoutMap);
 				TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
 
 				for (int floorNum = 1; floorNum <= totalFloors; floorNum++) {
@@ -590,12 +708,12 @@ public class ProjectDetailsService {
 		result.put("failed", failedMessages);
 		return result;
 	}
-	
+
 	private String uploadLayoutImage(MultipartFile file, String layoutType, String towerName) {
-	    if (file == null || file.isEmpty()) {
-	        throw new UserServiceException(400, layoutType + " image is missing for tower: " + towerName);
-	    }
-	    return fileManager.uploadFile(file);
+		if (file == null || file.isEmpty()) {
+			throw new UserServiceException(400, layoutType + " image is missing for tower: " + towerName);
+		}
+		return fileManager.uploadFile(file); // Adjust this based on your upload logic
 	}
 
 	public ResponseEntity<?> createFloorDetails(FloorDetails floorDetails) {
@@ -838,12 +956,13 @@ public class ProjectDetailsService {
 			String role = userClaims.get("role");
 			String email = userClaims.get("email");
 
-			if (!"ADMIN".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role)) {
+			if (!"ADMIN".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpStatus.FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
 			Optional<Flat> flatOpt = flatRepo.findById(flatId);
+
 			if (flatOpt.isEmpty()) {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Flat not found");
 			}
@@ -853,19 +972,14 @@ public class ProjectDetailsService {
 			if (requestData.containsKey("flatSize")) {
 				flat.setFlatSize(String.valueOf(requestData.get("flatSize")));
 			}
-
 			if (requestData.containsKey("flatType")) {
 				flat.setFlatType(String.valueOf(requestData.get("flatType")));
 			}
-
-			if ("ADMIN".equalsIgnoreCase(role)) {
-				if (requestData.containsKey("status")) {
-					flat.setStatus(String.valueOf(requestData.get("status")));
-					flat.setFlatInfo(String.valueOf(requestData.get("flatInfo")));
-				}
+			if ("ADMIN".equalsIgnoreCase(role) && requestData.containsKey("status")) {
+				flat.setStatus(String.valueOf(requestData.get("status")));
+				flat.setFlatInfo(String.valueOf(requestData.get("flatInfo")));
 			}
-
-			if ("SALES".equalsIgnoreCase(role)) {
+			if ("SALES".equalsIgnoreCase(role) || "CRM".equalsIgnoreCase(role)) {
 				User salesUser = userRepository.findByEmail(email);
 				if (salesUser == null) {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("CRM user not found for email: " + email);
@@ -877,11 +991,11 @@ public class ProjectDetailsService {
 					String clientEmail = String.valueOf(requestData.get("clientEmail"));
 
 					LeadDetails lead = leadRepository.findByLeadEmail(clientEmail);
+					System.out.println("Check client data ::" + lead);
 					if (lead == null) {
 						return ResponseEntity.status(HttpStatus.NOT_FOUND)
 								.body("Lead not found for email: " + clientEmail);
 					}
-
 					Client client = clientRepository.findByEmail(lead.getLeadEmail());
 					if (client == null) {
 						return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -892,7 +1006,24 @@ public class ProjectDetailsService {
 					flat.setStatus(status);
 					flat.setFlatInfo(flatInfo);
 					flat.setClientsId(salesUser.getId());
-					flat.setSalesId(lead.getSalesId());
+
+					Flat flatData = flatRepo.save(flat);
+					System.out.println("Check flat data :: " + flatData);
+					FlatBookDetails bookDetails;
+					if ("SALES".equalsIgnoreCase(role)) {
+						bookDetails = new FlatBookDetails(client.getId(), client.getName(), salesUser.getId(),
+								salesUser.getName(), 0, null, flatData);
+						System.out.println("Check the data :: " + bookDetails);
+						bookDetailsRepository.save(bookDetails);
+						flat.setSalesId(lead.getSalesId());
+					} else if ("CRM".equalsIgnoreCase(role)) {
+						FlatBookDetails byFlatId = bookDetailsRepository.findByFlatId(flatId);
+						byFlatId.setCrmId(salesUser.getId());
+						byFlatId.setCrmName(salesUser.getName());
+//						byFlatId.se
+						bookDetailsRepository.save(byFlatId);
+						flat.setCrmId(salesUser.getId());
+					}
 
 					sendNotificationToUser(salesUser,
 							"Flat " + flatId + " is " + status + " for client " + client.getEmail());
@@ -1119,7 +1250,7 @@ public class ProjectDetailsService {
 
 			for (Map<String, Object> flatMap : flatList) {
 				int baseFlatNumber = (int) flatMap.get("flatNumber");
-				String flatSize = (String) flatMap.get("flatSize" + " sq. ft.");
+				String flatSize = (String) flatMap.get("flatSize");
 				String flatType = flatMap.get("flatType") != null ? (String) flatMap.get("flatType") : null;
 				String status = flatMap.get("status") != null ? (String) flatMap.get("status") : null;
 
@@ -1127,7 +1258,7 @@ public class ProjectDetailsService {
 
 				for (Flat flat : allFlats) {
 					if (flat.getFlatNumber() % 100 == unitNumber) {
-						flat.setFlatSize(flatSize);
+						flat.setFlatSize(flatSize + " sq. ft.");
 						flat.setFlatType(flatType);
 						flat.setStatus(status);
 					}

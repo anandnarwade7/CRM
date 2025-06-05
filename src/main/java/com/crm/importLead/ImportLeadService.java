@@ -748,7 +748,7 @@ public class ImportLeadService {
 				client.setCity(lead.getCity());
 				client.setMassagesJsonData(lead.getJsonData());
 				client.setDynamicFieldsJson(lead.getDynamicFieldsJson());
-				client.setSalesId(lead.getId());
+				client.setSalesId(lead.getAssignedTo());
 
 				sortedCrmUserIds.sort(Comparator.comparingLong(assignedLeadCounts::get));
 				Long selectedCrmId = sortedCrmUserIds.get(currentIndex);
@@ -769,7 +769,7 @@ public class ImportLeadService {
 			List<LeadDetails> clientsList = leadRepository.saveAll(leadsToSave);
 			clientsList.forEach(leads -> {
 				System.out.println("Passing to upsertClientByEmailAndUserId -> " + leads);
-			
+				updateClientByEmailAndUserId(leads);
 			});
 
 			assignedLeadCounts.forEach((crUserId, leadCount) -> {
@@ -791,6 +791,48 @@ public class ImportLeadService {
 		}
 	}
 
-	
+	public void updateClientByEmailAndUserId(LeadDetails lead) {
+		String email = lead.getLeadEmail();
+		Long salesId = lead.getSalesId();
+		Long crmId = lead.getAssignedTo();
+
+		Client exactClient = clientRepository.findByEmailAndSalesId(email, salesId);
+		if (exactClient != null) {
+			return;
+		}
+
+		Client client = clientRepository.findByEmail(email);
+		if (client != null) {
+			List<Long> salesIdList = client.getSalesId() != null ? new ArrayList<>(client.getSalesId())
+					: new ArrayList<>();
+
+			if (!salesIdList.contains(salesId)) {
+				salesIdList.add(salesId);
+				client.setSalesId(salesIdList);
+			}
+
+			List<Long> crmIdList = client.getCrmIds() != null ? new ArrayList<>(client.getCrmIds()) : new ArrayList<>();
+
+			if (!crmIdList.contains(crmId)) {
+				crmIdList.add(crmId);
+				client.setCrmIds(crmIdList);
+			}
+
+			client.setUpdatedOn(System.currentTimeMillis());
+			clientRepository.save(client);
+		} else {
+			Client newClient = new Client();
+			newClient.setEmail(email);
+			newClient.setName(lead.getLeadName());
+			newClient.setSalesId(new ArrayList<>(Collections.singletonList(salesId)));
+			newClient.setCrmIds(new ArrayList<>(Collections.singletonList(crmId)));
+			newClient.setCreatedOn(System.currentTimeMillis());
+			newClient.setUpdatedOn(System.currentTimeMillis());
+			newClient.setAction(Status.UNBLOCK);
+			newClient.setRole("CLIENT");
+
+			clientRepository.save(newClient);
+		}
+	}
 
 }

@@ -43,4 +43,6 @@ public interface LeadRepository  extends JpaRepository<LeadDetails, Long>{
 
 	LeadDetails findByLeadEmail(String clientEmail);
 
+	List<LeadDetails> findByAssignedTo(Long userId);
+
 }
