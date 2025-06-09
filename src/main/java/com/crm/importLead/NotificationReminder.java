@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
-public class NotificationRemider {
+public class NotificationReminder {
 
 	private final ImportLeadRepository leadRepository;
 	private final LeadRepository clientRepository;
@@ -29,7 +29,7 @@ public class NotificationRemider {
 	// Memory-safe notification tracker (no duplicates in 24h)
 	private final Set<String> sentNotificationKeys = ConcurrentHashMap.newKeySet();
 
-	public NotificationRemider(ImportLeadRepository leadRepository, NotificationsRepository notificationRepository,
+	public NotificationReminder(ImportLeadRepository leadRepository, NotificationsRepository notificationRepository,
 			LeadRepository clientRepository, UserRepository userRepository) {
 		this.leadRepository = leadRepository;
 		this.notificationRepository = notificationRepository;
@@ -135,6 +135,7 @@ public class NotificationRemider {
 		}
 	}
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //import com.corundumstudio.socketio.SocketIOServer;

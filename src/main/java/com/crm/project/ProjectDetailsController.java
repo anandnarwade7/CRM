@@ -304,4 +304,16 @@ public class ProjectDetailsController {
 			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+	
+	@GetMapping("/getflatbook/{crmId}")
+	public ResponseEntity<?> getFlatdata(@RequestHeader String token) {
+		try {
+			return projectDetailsService.getFlatBookData(token);
+		} catch (UserServiceException e) {
+			return ResponseEntity.badRequest().body("Unable to find data ");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>("An unexpected error occurred.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+	}
 }

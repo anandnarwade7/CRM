@@ -984,6 +984,8 @@ public class ProjectDetailsService {
 				if (salesUser == null) {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("CRM user not found for email: " + email);
 				}
+				Optional<Admins> byId = adminsRepository.findById(salesUser.getUserId());
+				Admins admins = byId.get();
 
 				if (requestData.containsKey("status") && requestData.containsKey("clientEmail")) {
 					String status = String.valueOf(requestData.get("status"));
@@ -1012,7 +1014,7 @@ public class ProjectDetailsService {
 					FlatBookDetails bookDetails;
 					if ("SALES".equalsIgnoreCase(role)) {
 						bookDetails = new FlatBookDetails(client.getId(), client.getName(), salesUser.getId(),
-								salesUser.getName(), 0, null, flatData);
+								salesUser.getName(), 0, null, salesUser.getUserId(), admins.getName(), flatData);
 						System.out.println("Check the data :: " + bookDetails);
 						bookDetailsRepository.save(bookDetails);
 						flat.setSalesId(lead.getSalesId());
@@ -1020,7 +1022,8 @@ public class ProjectDetailsService {
 						FlatBookDetails byFlatId = bookDetailsRepository.findByFlatId(flatId);
 						byFlatId.setCrmId(salesUser.getId());
 						byFlatId.setCrmName(salesUser.getName());
-//						byFlatId.se
+						byFlatId.setAdminId(salesUser.getUserId());
+						byFlatId.setAdminName(admins.getName());
 						bookDetailsRepository.save(byFlatId);
 						flat.setCrmId(salesUser.getId());
 					}
@@ -1308,4 +1311,70 @@ public class ProjectDetailsService {
 					"Unable to fetch details of tower details", System.currentTimeMillis()));
 		}
 	}
+
+	public ResponseEntity<?> getFlatBookData(String token) {
+	    try {
+	        if (jwtUtil.isTokenExpired(token)) {
+	            return ResponseEntity
+	                .status(HttpServletResponse.SC_UNAUTHORIZED)
+	                .body("Unauthorized: Your session has expired.");
+	        }
+
+	        Map<String, String> userClaims = jwtUtil.extractRole1(token);
+	        String role = userClaims.get("role");
+	        String email = userClaims.get("email");
+
+	        if (!List.of("ADMIN", "CRM", "SALES").contains(role.toUpperCase())) {
+	            return ResponseEntity
+	                .status(HttpServletResponse.SC_FORBIDDEN)
+	                .body("Forbidden: You do not have the necessary permissions.");
+	        }
+
+	        List<FlatBookDetails> bookedData;
+
+	        switch (role.toUpperCase()) {
+	            case "CRM":
+	            case "SALES":
+	                User user = userRepository.findByEmail(email);
+	                if (user == null) {
+	                    return ResponseEntity
+	                        .status(HttpServletResponse.SC_NOT_FOUND)
+	                        .body("User not found for email: " + email);
+	                }
+
+	                bookedData = "CRM".equalsIgnoreCase(user.getRole())
+	                    ? bookDetailsRepository.findByCrmId(user.getId())
+	                    : bookDetailsRepository.findBySalesId(user.getId());
+	                break;
+
+	            case "ADMIN":
+	                Admins admin = adminsRepository.findByEmail(email);
+	                if (admin == null) {
+	                    return ResponseEntity
+	                        .status(HttpServletResponse.SC_NOT_FOUND)
+	                        .body("Admin not found for email: " + email);
+	                }
+
+	                bookedData = bookDetailsRepository.getByAdminId(admin.getId());
+	                break;
+
+	            default:
+	                return ResponseEntity
+	                    .status(HttpServletResponse.SC_FORBIDDEN)
+	                    .body("Forbidden: Unsupported role.");
+	        }
+
+	        return ResponseEntity.ok(bookedData);
+
+	    } catch (UserServiceException e) {
+	        return ResponseEntity
+	            .status(e.getStatusCode())
+	            .body(new Error(e.getStatusCode(), e.getMessage(), "Unable to fetch data", System.currentTimeMillis()));
+
+	    } catch (Exception ex) {
+	        ex.printStackTrace();
+	        throw new UserServiceException(409, "Failed to fetch booked flat details: " + ex.getMessage());
+	    }
+	}
+
 }

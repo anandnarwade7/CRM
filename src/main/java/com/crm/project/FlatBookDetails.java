@@ -21,6 +21,8 @@ public class FlatBookDetails {
 	private String salesName;
 	private long crmId;
 	private String crmName;
+	private long adminId;
+	private String adminName;
 
 	@OneToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "flat_id")
@@ -90,8 +92,24 @@ public class FlatBookDetails {
 		this.flat = flat;
 	}
 
-	public FlatBookDetails(long clientId, String clientName, long salesId, String salesName, long crmId,
-			String crmName, Flat flat) {
+	public long getAdminId() {
+		return adminId;
+	}
+
+	public String getAdminName() {
+		return adminName;
+	}
+
+	public void setAdminId(long adminId) {
+		this.adminId = adminId;
+	}
+
+	public void setAdminName(String adminName) {
+		this.adminName = adminName;
+	}
+
+	public FlatBookDetails(long clientId, String clientName, long salesId, String salesName, long crmId, String crmName,
+			long adminId, String adminName, Flat flat) {
 		super();
 		this.clientId = clientId;
 		this.clientName = clientName;
@@ -99,16 +117,23 @@ public class FlatBookDetails {
 		this.salesName = salesName;
 		this.crmId = crmId;
 		this.crmName = crmName;
+		this.adminId = adminId;
+		this.adminName = adminName;
 		this.flat = flat;
 	}
 
-	public FlatBookDetails() {}
-	
+	public FlatBookDetails() {
+	}
+
 	@Override
 	public String toString() {
-		return "FlatBookDetails [id=" + id + ", clientId=" + clientId + ", clientName=" + clientName + ", salesId="
-				+ salesId + ", salesName=" + salesName + ", crmId=" + crmId + ", crmName=" + crmName + ", flat=" + flat
+		return "FlatBookDetails [id=" + id + ", clientId=" + clientId + ", "
+				+ (clientName != null ? "clientName=" + clientName + ", " : "") + "salesId=" + salesId + ", "
+				+ (salesName != null ? "salesName=" + salesName + ", " : "") + "crmId=" + crmId + ", "
+				+ (crmName != null ? "crmName=" + crmName + ", " : "") + "adminId=" + adminId + ", "
+				+ (adminName != null ? "adminName=" + adminName + ", " : "") + (flat != null ? "flat=" + flat : "")
 				+ "]";
 	}
+
 
 }
