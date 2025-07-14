@@ -16,9 +16,6 @@ public class Chats {
 	private String massages;
 	private long createdOn;
 
-	public Chats() {
-	}
-
 	public long getId() {
 		return id;
 	}
@@ -70,8 +67,9 @@ public class Chats {
 
 	@Override
 	public String toString() {
-		return "Chats [id=" + id + ", userId=" + userId + ", supportId=" + supportId + ", massages=" + massages
+		return "Comment [id=" + id + ", userId=" + userId + ", supportId=" + supportId + ", massages=" + massages
 				+ ", createdOn=" + createdOn + "]";
 	}
 
+	public Chats() {super();}
 }

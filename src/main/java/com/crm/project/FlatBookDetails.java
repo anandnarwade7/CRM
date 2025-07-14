@@ -24,7 +24,7 @@ public class FlatBookDetails {
 	private long adminId;
 	private String adminName;
 
-	@OneToOne(fetch = FetchType.LAZY)
+	@OneToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "flat_id")
 	private Flat flat;
 

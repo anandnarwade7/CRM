@@ -27,7 +27,7 @@ import com.crm.user.UserServiceException;
 @RestController
 @RequestMapping("/api/event")
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("http://139.84.136.208 ") })
+		("http://localhost:5174"), ("http://139.84.136.208 "), ("crm.propertysearch.ai") })
 public class EventDetailsController {
 
 //	private String serverDocsUrl = "C:\\CRM\\MediaData\\";
@@ -166,8 +166,7 @@ public class EventDetailsController {
 	}
 
 	@DeleteMapping("/deleteEventById/{eventId}")
-	public ResponseEntity<?> deleteEventById(
-			@RequestHeader(value = "Authorization", required = true) String token,
+	public ResponseEntity<?> deleteEventById(@RequestHeader(value = "Authorization", required = true) String token,
 			@PathVariable long eventId) {
 		try {
 			return eventDetailsService.deleteDetailsById(token, eventId);
@@ -184,6 +183,16 @@ public class EventDetailsController {
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Unable to delete all record data", System.currentTimeMillis()));
+		}
+	}
+
+	@PostMapping("/sendMailToClient/{eventDetailsId}/{clientId}")
+	public ResponseEntity<?> sendMailToClient(@PathVariable long eventDetailsId, @PathVariable long clientId) {
+		try {
+			return eventDetailsService.sendMailToClient(eventDetailsId, clientId);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to send mail", System.currentTimeMillis()));
 		}
 	}
 

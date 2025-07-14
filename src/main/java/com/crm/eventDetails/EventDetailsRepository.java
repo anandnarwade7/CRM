@@ -1,6 +1,7 @@
 package com.crm.eventDetails;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -19,5 +20,7 @@ public interface EventDetailsRepository extends JpaRepository<EventDetails, Long
 	List<EventDetails> findByLeadId(long leadId);
 
 	EventDetails deleteAllByClientId(long clientId);
+
+	Optional<EventDetails> findByEventIdAndClientId(long eventDetailsId, long clientId);
 
 }

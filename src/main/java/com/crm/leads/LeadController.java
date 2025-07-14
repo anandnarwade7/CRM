@@ -27,7 +27,7 @@ import com.crm.user.UserServiceException;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("http://139.84.136.208") })
+		("http://localhost:5174"), ("http://139.84.136.208"),("crm.propertysearch.ai") })
 @RequestMapping("/api/clients")
 public class LeadController {
 
@@ -154,10 +154,10 @@ public class LeadController {
 
 	@PutMapping("/uploaddocs/{id}")
 	public ResponseEntity<?> uploadDocs(@RequestHeader(value = "Authorization", required = true) String token,
-			@PathVariable long id, @RequestParam(value = "agreement") MultipartFile agreement,
-			@RequestParam(value = "stampDuty") MultipartFile stampDuty,
-			@RequestParam(value = "tdsDoc") MultipartFile tdsDoc,
-			@RequestParam(value = "bankSanction") MultipartFile bankSanction) {
+			@PathVariable long id, @RequestParam(value = "agreement", required = false) MultipartFile agreement,
+			@RequestParam(value = "stampDuty", required = false) MultipartFile stampDuty,
+			@RequestParam(value = "tdsDoc", required = false) MultipartFile tdsDoc,
+			@RequestParam(value = "bankSanction", required = false) MultipartFile bankSanction) {
 		try {
 			return leadService.uploadDocs(token, id, agreement, stampDuty, tdsDoc, bankSanction);
 		} catch (UserServiceException e) {

@@ -23,8 +23,8 @@ import com.crm.leads.LeadController;
 @Service
 public class FilesManager implements FilesServices {
 
-//	private String serverDocsUrl = "/root/mediadata/Docs/";
-	private String serverDocsUrl = "D:\\Files\\MediaData\\";
+	private String serverDocsUrl = "/root/mediadata/Docs/";
+//	private String serverDocsUrl = "D:\\Files\\MediaData\\";
 
 	File baseDir;
 

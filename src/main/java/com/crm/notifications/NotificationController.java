@@ -2,6 +2,7 @@ package com.crm.notifications;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,18 +11,24 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.crm.Exception.Error;
+import com.crm.security.JwtUtil;
+import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"),("http://139.84.136.208 ")})
+		("http://localhost:5174"), ("http://139.84.136.208 ") })
 @RequestMapping("/api/notifications")
 public class NotificationController {
 
 	@Autowired
 	private NotificationsRepository repository;
+
+	@Autowired
+	private JwtUtil jwtUtil;
 
 //	@Autowired
 //	private SimpMessagingTemplate messagingTemplate;
@@ -52,9 +59,18 @@ public class NotificationController {
 		}
 	}
 
-	@GetMapping("/unseen/{email}")
-	public ResponseEntity<?> getUnseenCountByUserId(@PathVariable String email) {
+	@GetMapping("/unseen")
+	public ResponseEntity<?> getUnseenCountByUserId(
+			@RequestHeader(value = "Authorization", required = true) String token) {
 		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String email = userClaims.get("email");
+
 			List<Notifications> notificationList = repository.findByEmail(email);
 			long unseenCount = 0;
 			if (notificationList.isEmpty()) {
@@ -130,9 +146,17 @@ public class NotificationController {
 //	}
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
-	@GetMapping("/{email}")
-	public ResponseEntity<?> getNotificationByRole(@PathVariable String email) {
+	@GetMapping("/all")
+	public ResponseEntity<?> getNotificationByRole(
+			@RequestHeader(value = "Authorization", required = true) String token) {
 		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String email = userClaims.get("email");
 			List<Notifications> notificationList = repository.findByEmail(email);
 			if (notificationList.isEmpty()) {
 				ResponseEntity.ok(notificationList);
@@ -152,17 +176,24 @@ public class NotificationController {
 		}
 	}
 
-//	to clear all notification (admin)
 	@CrossOrigin(origins = { ("http://localhost:3000") })
-	@DeleteMapping("delete")
+	@DeleteMapping("/delete")
 	public void deleteAllNotification() {
 		repository.deleteAll();
 	}
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
-	@DeleteMapping("delete/{email}")
-	public ResponseEntity<?> deleteAllNotification(@PathVariable String email) {
+	@DeleteMapping("/deleteall")
+	public ResponseEntity<?> deleteAllNotification(
+			@RequestHeader(value = "Authorization", required = true) String token) {
 		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String email = userClaims.get("email");
 			List<Notifications> allByEmail = repository.findAllByEmail(email);
 			for (Notifications notifications : allByEmail) {
 				repository.deleteById(notifications.getId());
@@ -175,14 +206,12 @@ public class NotificationController {
 	}
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
-	@GetMapping("/getNotification/{id}")
+	@GetMapping("/get/{id}")
 	public ResponseEntity<?> getNotificationById(@PathVariable long id) {
 		try {
 			Optional<Notifications> findById = repository.findById(id);
 			if (findById.isPresent()) {
-
 				return ResponseEntity.ok(findById);
-
 			} else {
 				return ResponseEntity.ok(0);
 			}
@@ -197,13 +226,20 @@ public class NotificationController {
 	}
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
-	@GetMapping("/getNotification/{email}/{id}")
-	public ResponseEntity<?> getNotificationById(@PathVariable String email, @PathVariable long id) {
+	@GetMapping("/getNotification/{id}")
+	public ResponseEntity<?> getNotificationById(@RequestHeader(value = "Authorization", required = true) String token,
+			@PathVariable long id) {
 		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String email = userClaims.get("email");
 			Optional<Notifications> findById = repository.findByEmailAndId(email, id);
 			if (findById.isPresent()) {
 				return ResponseEntity.ok(findById);
-
 			} else {
 				return ResponseEntity.ok(0);
 			}
@@ -227,7 +263,6 @@ public class NotificationController {
 			} else {
 				return ResponseEntity.ok(0);
 			}
-
 		} catch (NotificationException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Don't have any notification to delete", System.currentTimeMillis()));
@@ -238,10 +273,17 @@ public class NotificationController {
 	}
 
 	@CrossOrigin(origins = { ("http://localhost:3000") })
-	@DeleteMapping("/{email}/{id}")
-	public ResponseEntity<?> clearNotification(@PathVariable String email, @PathVariable long id) {
+	@DeleteMapping("/{id}")
+	public ResponseEntity<?> clearNotification(@RequestHeader(value = "Authorization", required = true) String token,
+			@PathVariable long id) {
 		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
 
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String email = userClaims.get("email");
 			Optional<Notifications> notificationOptional = repository.existsByEmailAndId(email, id);
 			if (notificationOptional.isPresent()) {
 				repository.deleteById(id);
@@ -258,5 +300,4 @@ public class NotificationController {
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-
 }

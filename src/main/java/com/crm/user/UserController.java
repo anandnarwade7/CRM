@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("http://139.84.136.208") })
+		("http://localhost:5174"), ("http://139.84.136.208"),("crm.propertysearch.ai") })
 @RequestMapping("/api/user")
 public class UserController {
 
@@ -101,6 +101,16 @@ public class UserController {
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
 	}
+	
+	@GetMapping("/getuserdetails")
+	public ResponseEntity<?> getUserDetails(@RequestHeader(value = "Authorization", required = true) String token) {
+		try {
+			return service.getUserDetails(token);
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
+		}
+	}
 
 	@PutMapping("/addDetails/{userId}")
 	public ResponseEntity<?> updateUserDetails(@RequestHeader(value = "Authorization", required = true) String token,
@@ -113,12 +123,12 @@ public class UserController {
 		}
 	}
 
-	@PutMapping("/updateUser/{adminId}/{response}")
+	@PutMapping("/updateUser/{userId}/{response}")
 	public ResponseEntity<?> updateUserAsBlockUnBlock(
-			@RequestHeader(value = "Authorization", required = true) String token, @PathVariable long adminId,
+			@RequestHeader(value = "Authorization", required = true) String token, @PathVariable long userId,
 			@PathVariable Status response, @RequestParam(name = "note", required = false) String note) {
 		try {
-			return service.updateUserAsBlockUnBlock(token, adminId, response, note);
+			return service.updateUserAsBlockUnBlock(token, userId, response, note);
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Invalid User Credentials", System.currentTimeMillis()));

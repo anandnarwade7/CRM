@@ -235,7 +235,7 @@ public class LeadService {
 			String email = userClaims.get("email");
 
 			System.out.println("User Role: " + role + ", Email: " + email);
-			
+
 			if (!"ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
@@ -725,13 +725,13 @@ public class LeadService {
 
 			String role = jwtUtil.extractRole(token);
 
-			if (!"CRM".equalsIgnoreCase(role)) {
+			if (!"CRM".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
 			long assignedLeads = repository.countByAssignedTo(userId);
-			long convertedLeads = repository.countLeadsByUserIdAndStatusNotConverted(userId, Status.CONVERTED);
+			long convertedLeads = repository.countByAssignedToAndStatusIsNot(userId, Status.CONVERTED);
 
 			Map<String, Long> response = Map.of("totalLeads", assignedLeads, "convertedLeads", convertedLeads);
 
@@ -776,10 +776,18 @@ public class LeadService {
 				String tdsDocPath = fileManager.uploadFile(tdsDoc);
 				String bankSanctionPath = fileManager.uploadFile(bankSanction);
 
-				leadData.setAgreement(agreementPath);
-				leadData.setStampDuty(stampDutyPath);
-				leadData.setTdsDoc(tdsDocPath);
-				leadData.setBankSanction(bankSanctionPath);
+//				leadData.setAgreement(agreementPath);
+//				leadData.setStampDuty(stampDutyPath);
+//				leadData.setTdsDoc(tdsDocPath);
+//				leadData.setBankSanction(bankSanctionPath);
+
+				leadData.setAgreement(
+						(agreementPath != null && !agreementPath.isEmpty()) ? agreementPath : leadData.getAgreement());
+				leadData.setStampDuty(
+						(stampDutyPath != null && !stampDutyPath.isEmpty()) ? stampDutyPath : leadData.getStampDuty());
+				leadData.setTdsDoc((tdsDocPath != null && !tdsDocPath.isEmpty()) ? tdsDocPath : leadData.getTdsDoc());
+				leadData.setBankSanction((bankSanctionPath != null && !bankSanctionPath.isEmpty()) ? bankSanctionPath
+						: leadData.getBankSanction());
 
 				LeadDetails leadDetails = repository.save(leadData);
 				Client client = clientRepository.findByEmail(leadData.getLeadEmail());
@@ -846,6 +854,5 @@ public class LeadService {
 					.body("Internal Server Error: " + e.getMessage());
 		}
 	}
-	
-	
+
 }

@@ -15,6 +15,7 @@ public class UserDTO {
 	private String propertyName;
 	private long startDate;
 	private long endDate;
+	private String password;
 
 	public UserDTO() {
 	}
@@ -112,8 +113,16 @@ public class UserDTO {
 		this.endDate = endDate;
 	}
 
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
 	public UserDTO(long id, String name, String email, String mobile, String role, long createdOn, String action,
-			String profilePic) {
+			String profilePic, String password) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -123,12 +132,18 @@ public class UserDTO {
 		this.createdOn = createdOn;
 		this.action = action;
 		this.profilePic = profilePic;
+		this.password = password;
 	}
 
 	@Override
 	public String toString() {
-		return "UserDTO [id=" + id + ", name=" + name + ", email=" + email + ", mobile=" + mobile + ", role=" + role
-				+ ", createdOn=" + createdOn + ", action=" + action + ", profilePic=" + profilePic + "]";
+		return "UserDTO [id=" + id + ", " + (name != null ? "name=" + name + ", " : "")
+				+ (email != null ? "email=" + email + ", " : "") + (mobile != null ? "mobile=" + mobile + ", " : "")
+				+ (role != null ? "role=" + role + ", " : "") + "createdOn=" + createdOn + ", "
+				+ (action != null ? "action=" + action + ", " : "")
+				+ (profilePic != null ? "profilePic=" + profilePic + ", " : "")
+				+ (propertyName != null ? "propertyName=" + propertyName + ", " : "") + "startDate=" + startDate
+				+ ", endDate=" + endDate + ", " + (password != null ? "password=" + password : "") + "]";
 	}
 
 	public UserDTO(User user) {
@@ -140,6 +155,7 @@ public class UserDTO {
 		this.profilePic = user.getProfilePic();
 		this.action = user.getAction().toString();
 		this.createdOn = user.getCreatedOn();
+		this.password= user.getPassword();
 	}
 
 	public UserDTO(Admins user) {
@@ -151,9 +167,9 @@ public class UserDTO {
 		this.profilePic = user.getProfilePic();
 		this.action = user.getAction().toString();
 		this.createdOn = user.getCreatedOn();
-		this.propertyName=user.getPropertyName();
-		this.startDate=user.getStartDate();
-		this.endDate=user.getEndDate();
-		
+		this.propertyName = user.getPropertyName();
+		this.startDate = user.getStartDate();
+		this.endDate = user.getEndDate();
+		this.password= user.getPassword();
 	}
 }

@@ -24,7 +24,7 @@ import jakarta.transaction.Transactional;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("http://139.84.136.208 ") })
+		("http://localhost:5174"), ("http://139.84.136.208 "),("crm.propertysearch.ai") })
 @RequestMapping("/api/project")
 public class ProjectDetailsController {
 
@@ -119,11 +119,10 @@ public class ProjectDetailsController {
 	        @RequestParam MultiValueMap<String, MultipartFile> multipartFiles) {
 	 
 	    try {
-	        // Organize layout images by tower index
 	        Map<Integer, Map<String, MultipartFile>> indexedLayouts = new HashMap<>();
 	 
 	        for (Map.Entry<String, List<MultipartFile>> entry : multipartFiles.entrySet()) {
-	            String rawKey = entry.getKey(); // e.g., "oddLayout[0]", "blueprint[1]", etc.
+	            String rawKey = entry.getKey(); 
 	            List<MultipartFile> files = entry.getValue();
 	 
 	            if (files == null || files.isEmpty()) continue;
@@ -305,8 +304,8 @@ public class ProjectDetailsController {
 		}
 	}
 	
-	@GetMapping("/getflatbook/{crmId}")
-	public ResponseEntity<?> getFlatdata(@RequestHeader String token) {
+	@GetMapping("/getbookedflats")
+	public ResponseEntity<?> getFlatdata(@RequestHeader("Authorization") String token) {
 		try {
 			return projectDetailsService.getFlatBookData(token);
 		} catch (UserServiceException e) {

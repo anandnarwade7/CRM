@@ -27,6 +27,8 @@ public class Flat {
 	private long salesId;
 	private long crmId;
 	private String flatInfo;
+	private String clientEmail;
+	private String clientName;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "floor_id")
@@ -116,8 +118,24 @@ public class Flat {
 		this.flatInfo = flatInfo;
 	}
 
+	public String getClientEmail() {
+		return clientEmail;
+	}
+
+	public String getClientName() {
+		return clientName;
+	}
+
+	public void setClientEmail(String clientEmail) {
+		this.clientEmail = clientEmail;
+	}
+
+	public void setClientName(String clientName) {
+		this.clientName = clientName;
+	}
+
 	public Flat(long id, int flatNumber, String flatSize, String flatType, String status, long clientsId, long salesId,
-			long crmId, String flatInfo, FloorDetails floor) {
+			long crmId, String flatInfo, String clientEmail, String clientName, FloorDetails floor) {
 		super();
 		this.id = id;
 		this.flatNumber = flatNumber;
@@ -127,15 +145,22 @@ public class Flat {
 		this.clientsId = clientsId;
 		this.salesId = salesId;
 		this.crmId = crmId;
-		this.floor = floor;
 		this.flatInfo = flatInfo;
+		this.clientEmail = clientEmail;
+		this.clientName = clientName;
+		this.floor = floor;
 	}
 
 	@Override
 	public String toString() {
-		return "Flat [id=" + id + ", flatNumber=" + flatNumber + ", flatSize=" + flatSize + ", flatType=" + flatType
-				+ ", status=" + status + ", clientsId=" + clientsId + ", salesId=" + salesId + ", crmId=" + crmId
-				+ ", flatInfo=" + flatInfo + ", floor=" + floor + "]";
+		return "Flat [id=" + id + ", flatNumber=" + flatNumber + ", "
+				+ (flatSize != null ? "flatSize=" + flatSize + ", " : "")
+				+ (flatType != null ? "flatType=" + flatType + ", " : "")
+				+ (status != null ? "status=" + status + ", " : "") + "clientsId=" + clientsId + ", salesId=" + salesId
+				+ ", crmId=" + crmId + ", " + (flatInfo != null ? "flatInfo=" + flatInfo + ", " : "")
+				+ (clientEmail != null ? "clientEmail=" + clientEmail + ", " : "")
+				+ (clientName != null ? "clientName=" + clientName + ", " : "")
+				+ (floor != null ? "floor=" + floor : "") + "]";
 	}
 
 }

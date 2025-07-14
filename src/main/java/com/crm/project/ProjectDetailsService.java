@@ -677,19 +677,58 @@ public class ProjectDetailsService {
 				towerDetails.setCustomLayouts(customLayoutMap);
 				TowerDetails savedTower = towerDetailsRepo.save(towerDetails);
 
+/////////////////////////////Old logic//////////////////////////
+//				for (int floorNum = 1; floorNum <= totalFloors; floorNum++) {
+//					FloorDetails floor = new FloorDetails();
+//					floor.setFloorName("Floor " + floorNum);
+//					floor.setTower(savedTower);
+//					FloorDetails savedFloor = floorDetailsRepo.save(floor);
+//
+//					for (int flatNum = 1; flatNum <= flatPerFloor; flatNum++) {
+//						Flat flat = new Flat();
+//						flat.setFlatNumber((floorNum * 100) + flatNum);
+//						flat.setStatus("Available");
+//						flat.setFloor(savedFloor);
+//						flatRepo.save(flat);
+//					}
+//				}
+/////////////////////////////////////////////////////////////////
+				/*
+				 * Optimized code while creating floors and flats, reduces multiple db hits
+				 */
+
+				List<FloorDetails> floors = new ArrayList<>();
 				for (int floorNum = 1; floorNum <= totalFloors; floorNum++) {
 					FloorDetails floor = new FloorDetails();
 					floor.setFloorName("Floor " + floorNum);
 					floor.setTower(savedTower);
-					FloorDetails savedFloor = floorDetailsRepo.save(floor);
+					floors.add(floor);
+				}
+				List<FloorDetails> savedFloors = floorDetailsRepo.saveAll(floors);
+
+				List<Flat> flatBatch = new ArrayList<>();
+				final int BATCH_SIZE = 1000;
+
+				for (int i = 0; i < savedFloors.size(); i++) {
+					FloorDetails floor = savedFloors.get(i);
+					int floorNum = i + 1;
 
 					for (int flatNum = 1; flatNum <= flatPerFloor; flatNum++) {
 						Flat flat = new Flat();
 						flat.setFlatNumber((floorNum * 100) + flatNum);
 						flat.setStatus("Available");
-						flat.setFloor(savedFloor);
-						flatRepo.save(flat);
+						flat.setFloor(floor);
+						flatBatch.add(flat);
+
+						if (flatBatch.size() >= BATCH_SIZE) {
+							flatRepo.saveAll(flatBatch);
+							flatBatch.clear();
+						}
 					}
+				}
+
+				if (!flatBatch.isEmpty()) {
+					flatRepo.saveAll(flatBatch);
 				}
 
 				successMessages.add("Tower '" + towerName + "' created successfully.");
@@ -713,7 +752,7 @@ public class ProjectDetailsService {
 		if (file == null || file.isEmpty()) {
 			throw new UserServiceException(400, layoutType + " image is missing for tower: " + towerName);
 		}
-		return fileManager.uploadFile(file); // Adjust this based on your upload logic
+		return fileManager.uploadFile(file);
 	}
 
 	public ResponseEntity<?> createFloorDetails(FloorDetails floorDetails) {
@@ -947,28 +986,28 @@ public class ProjectDetailsService {
 	public ResponseEntity<?> updateFlat(String token, long flatId, Map<String, Object> requestData) {
 		try {
 			System.out.println("In service");
-
+ 
 			if (jwtUtil.isTokenExpired(token)) {
 				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized: Your session has expired.");
 			}
-
+ 
 			Map<String, String> userClaims = jwtUtil.extractRole1(token);
 			String role = userClaims.get("role");
 			String email = userClaims.get("email");
-
+ 
 			if (!"ADMIN".equalsIgnoreCase(role) && !"SALES".equalsIgnoreCase(role) && !"CRM".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpStatus.FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
-
+ 
 			Optional<Flat> flatOpt = flatRepo.findById(flatId);
-
+ 
 			if (flatOpt.isEmpty()) {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Flat not found");
 			}
-
+ 
 			Flat flat = flatOpt.get();
-
+ 
 			if (requestData.containsKey("flatSize")) {
 				flat.setFlatSize(String.valueOf(requestData.get("flatSize")));
 			}
@@ -980,18 +1019,21 @@ public class ProjectDetailsService {
 				flat.setFlatInfo(String.valueOf(requestData.get("flatInfo")));
 			}
 			if ("SALES".equalsIgnoreCase(role) || "CRM".equalsIgnoreCase(role)) {
+				System.out.println("Check Point 1");
 				User salesUser = userRepository.findByEmail(email);
 				if (salesUser == null) {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("CRM user not found for email: " + email);
 				}
 				Optional<Admins> byId = adminsRepository.findById(salesUser.getUserId());
 				Admins admins = byId.get();
-
+				System.out.println("Check Point 2");
 				if (requestData.containsKey("status") && requestData.containsKey("clientEmail")) {
+					System.out.println("Check Point 3");
 					String status = String.valueOf(requestData.get("status"));
-					String flatInfo = String.valueOf(requestData.get("flatInfo"));
+					String flatInfo = requestData.get("flatInfo") != null ? String.valueOf(requestData.get("flatInfo")) : null;
+					System.out.println("Check Point 4");
 					String clientEmail = String.valueOf(requestData.get("clientEmail"));
-
+					System.out.println("Check Point 5 : "+clientEmail);
 					LeadDetails lead = leadRepository.findByLeadEmail(clientEmail);
 					System.out.println("Check client data ::" + lead);
 					if (lead == null) {
@@ -1003,45 +1045,85 @@ public class ProjectDetailsService {
 						return ResponseEntity.status(HttpStatus.NOT_FOUND)
 								.body("Client not found for email: " + lead.getLeadEmail());
 					}
-
-//					flat.setCrmId();
 					flat.setStatus(status);
-					flat.setFlatInfo(flatInfo);
-					flat.setClientsId(salesUser.getId());
-
+ 
+//					flat.setCrmId();
 					Flat flatData = flatRepo.save(flat);
 					System.out.println("Check flat data :: " + flatData);
-					FlatBookDetails bookDetails;
+				
+					if ("Booked".contentEquals(status) ||"Sold".contentEquals(status) || "Refugee".contentEquals(status) ) {	
+						System.out.println("Check Point 6");
+					FlatBookDetails existing = bookDetailsRepository.findByFlatId(flatId);
 					if ("SALES".equalsIgnoreCase(role)) {
-						bookDetails = new FlatBookDetails(client.getId(), client.getName(), salesUser.getId(),
-								salesUser.getName(), 0, null, salesUser.getUserId(), admins.getName(), flatData);
-						System.out.println("Check the data :: " + bookDetails);
-						bookDetailsRepository.save(bookDetails);
+						System.out.println("Check Point 7");
+						if (existing != null) {
+							flat.setStatus(status);
+							flat.setFlatInfo(flatInfo);
+							
+							System.out.println("Sales id : "+salesUser.getId());
+							existing.setClientId(client.getId());
+//							System.out.println("Sales id : "+existing.setClientId(client.getId()));
+							existing.setClientName(client.getName());
+							existing.setSalesId(salesUser.getId());
+							System.out.println("Sales id : "+existing.getClientId());
+							existing.setSalesName(salesUser.getName());
+//							existing.setCrmId(client.getCrId());
+							existing.setAdminId(salesUser.getUserId());
+							existing.setAdminName(admins.getName());
+							existing.setFlat(flatData);
+							FlatBookDetails bookedDetails = bookDetailsRepository.save(existing);
+							flat.setClientsId(bookedDetails.getId());
+							flat.setClientEmail(clientEmail);
+							flat.setClientName(bookedDetails.getClientName());
+						} else {
+							flat.setStatus(status);
+							flat.setFlatInfo(flatInfo);
+							flat.setClientsId(salesUser.getId());
+							flat.setClientEmail(clientEmail);
+							flat.setClientName(client.getName());
+							flat.setClientName(client.getName());
+							System.out.println("Check Point 8");
+							FlatBookDetails newEntry = new FlatBookDetails(client.getId(), client.getName(),
+									salesUser.getId(), salesUser.getName(), 0, null, salesUser.getUserId(),
+									admins.getName(), flatData);
+							bookDetailsRepository.save(newEntry);
+						}
 						flat.setSalesId(lead.getSalesId());
+ 
 					} else if ("CRM".equalsIgnoreCase(role)) {
-						FlatBookDetails byFlatId = bookDetailsRepository.findByFlatId(flatId);
-						byFlatId.setCrmId(salesUser.getId());
-						byFlatId.setCrmName(salesUser.getName());
-						byFlatId.setAdminId(salesUser.getUserId());
-						byFlatId.setAdminName(admins.getName());
-						bookDetailsRepository.save(byFlatId);
+						System.out.println("Check Point 9");
+						if (existing != null) {
+							System.out.println("Check Point 10");
+							flat.setStatus(status);
+							flat.setFlatInfo(flatInfo);
+//							flat.setClientsId(salesUser.getId());
+							existing.setCrmId(salesUser.getId());
+							existing.setCrmName(salesUser.getName());
+							existing.setAdminId(salesUser.getUserId());
+							existing.setAdminName(admins.getName());
+							bookDetailsRepository.save(existing);
+						} else {
+							return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+									.body("Cannot assign CRM: Sales booking must exist before CRM update.");
+						}
 						flat.setCrmId(salesUser.getId());
 					}
-
+				}
+ 
 					sendNotificationToUser(salesUser,
 							"Flat " + flatId + " is " + status + " for client " + client.getEmail());
 					sendNotificationClient(client, "Congrats! Your flat " + flatId + " has been allocated to you by "
 							+ salesUser.getEmail() + "( " + salesUser.getRole() + " )");
-
+ 
 				} else {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 							.body("Both 'status' and 'clientEmail' must be provided for CRM update.");
 				}
 			}
-
+ 
 			Flat updatedFlat = flatRepo.save(flat);
 			return ResponseEntity.ok(updatedFlat);
-
+ 
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Unable to update flats details", System.currentTimeMillis()));
@@ -1050,7 +1132,7 @@ public class ProjectDetailsService {
 			throw new UserServiceException(409, "Failed to update details: " + ex.getMessage());
 		}
 	}
-
+ 
 	public ResponseEntity<?> projectsDetails(String token, int page) {
 		try {
 			System.out.println("In serivce ");
@@ -1313,68 +1395,59 @@ public class ProjectDetailsService {
 	}
 
 	public ResponseEntity<?> getFlatBookData(String token) {
-	    try {
-	        if (jwtUtil.isTokenExpired(token)) {
-	            return ResponseEntity
-	                .status(HttpServletResponse.SC_UNAUTHORIZED)
-	                .body("Unauthorized: Your session has expired.");
-	        }
+		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
 
-	        Map<String, String> userClaims = jwtUtil.extractRole1(token);
-	        String role = userClaims.get("role");
-	        String email = userClaims.get("email");
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String role = userClaims.get("role");
+			String email = userClaims.get("email");
 
-	        if (!List.of("ADMIN", "CRM", "SALES").contains(role.toUpperCase())) {
-	            return ResponseEntity
-	                .status(HttpServletResponse.SC_FORBIDDEN)
-	                .body("Forbidden: You do not have the necessary permissions.");
-	        }
+			if (!List.of("ADMIN", "CRM", "SALES").contains(role.toUpperCase())) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
 
-	        List<FlatBookDetails> bookedData;
+			List<FlatBookDetails> bookedData;
 
-	        switch (role.toUpperCase()) {
-	            case "CRM":
-	            case "SALES":
-	                User user = userRepository.findByEmail(email);
-	                if (user == null) {
-	                    return ResponseEntity
-	                        .status(HttpServletResponse.SC_NOT_FOUND)
-	                        .body("User not found for email: " + email);
-	                }
+			switch (role.toUpperCase()) {
+			case "CRM":
+			case "SALES":
+				User user = userRepository.findByEmail(email);
+				if (user == null) {
+					return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND)
+							.body("User not found for email: " + email);
+				}
 
-	                bookedData = "CRM".equalsIgnoreCase(user.getRole())
-	                    ? bookDetailsRepository.findByCrmId(user.getId())
-	                    : bookDetailsRepository.findBySalesId(user.getId());
-	                break;
+				bookedData = "CRM".equalsIgnoreCase(user.getRole()) ? bookDetailsRepository.findByCrmId(user.getId())
+						: bookDetailsRepository.findBySalesId(user.getId());
+				break;
 
-	            case "ADMIN":
-	                Admins admin = adminsRepository.findByEmail(email);
-	                if (admin == null) {
-	                    return ResponseEntity
-	                        .status(HttpServletResponse.SC_NOT_FOUND)
-	                        .body("Admin not found for email: " + email);
-	                }
+			case "ADMIN":
+				Admins admin = adminsRepository.findByEmail(email);
+				if (admin == null) {
+					return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND)
+							.body("Admin not found for email: " + email);
+				}
 
-	                bookedData = bookDetailsRepository.getByAdminId(admin.getId());
-	                break;
+				bookedData = bookDetailsRepository.getByAdminId(admin.getId());
+				break;
 
-	            default:
-	                return ResponseEntity
-	                    .status(HttpServletResponse.SC_FORBIDDEN)
-	                    .body("Forbidden: Unsupported role.");
-	        }
+			default:
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN).body("Forbidden: Unsupported role.");
+			}
 
-	        return ResponseEntity.ok(bookedData);
+			return ResponseEntity.ok(bookedData);
 
-	    } catch (UserServiceException e) {
-	        return ResponseEntity
-	            .status(e.getStatusCode())
-	            .body(new Error(e.getStatusCode(), e.getMessage(), "Unable to fetch data", System.currentTimeMillis()));
-
-	    } catch (Exception ex) {
-	        ex.printStackTrace();
-	        throw new UserServiceException(409, "Failed to fetch booked flat details: " + ex.getMessage());
-	    }
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(e.getStatusCode()).body(
+					new Error(e.getStatusCode(), e.getMessage(), "Unable to fetch data", System.currentTimeMillis()));
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new UserServiceException(409, "Failed to fetch booked flat details: " + ex.getMessage());
+		}
 	}
 
 }

@@ -1,31 +1,35 @@
 package com.crm.support;
 
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
 import com.crm.user.Status;
-import com.crm.user.User;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "support")
 public class Support {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
-	@ManyToOne
-	@JoinColumn(name = "user_id")
-	@OnDelete(action = OnDeleteAction.SET_NULL)
-	private User user;
+	private String name;
+	private String role;
+	private long userId;
+	private String email;
+	private String phone;
+	private String department;
 	private String query;
+	private long adminId;
 	private long createdOn;
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", length = 100)
 	private Status status;
 
 	public Support() {
@@ -33,14 +37,6 @@ public class Support {
 
 	public long getId() {
 		return id;
-	}
-
-	public User getUser() {
-		return user;
-	}
-
-	public void setUser(User user) {
-		this.user = user;
 	}
 
 	public Status getStatus() {
@@ -88,19 +84,85 @@ public class Support {
 		this.createdOn = System.currentTimeMillis();
 	}
 
-	public Support(long id, User user, Status status, String query, long createdOn) {
+	public long getAdminId() {
+		return adminId;
+	}
+
+	public void setAdminId(long adminId) {
+		this.adminId = adminId;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getRole() {
+		return role;
+	}
+
+	public long getUserId() {
+		return userId;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public String getDepartment() {
+		return department;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
+	}
+
+	public void setUserId(long userId) {
+		this.userId = userId;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public void setDepartment(String department) {
+		this.department = department;
+	}
+
+	public Support(long id, String name, String role, long userId, String email, String phone, String department,
+			String query, long adminId, long createdOn, Status status) {
 		super();
 		this.id = id;
-		this.user = user;
-		this.status = status;
+		this.name = name;
+		this.role = role;
+		this.userId = userId;
+		this.email = email;
+		this.phone = phone;
+		this.department = department;
 		this.query = query;
+		this.adminId = adminId;
 		this.createdOn = createdOn;
+		this.status = status;
 	}
 
 	@Override
 	public String toString() {
-		return "Support [id=" + id + ", user=" + user + ", status=" + status + ", query=" + query + ", createdOn="
-				+ createdOn + "]";
+		return "Support [id=" + id + ", " + (name != null ? "name=" + name + ", " : "")
+				+ (role != null ? "role=" + role + ", " : "") + "userId=" + userId + ", "
+				+ (email != null ? "email=" + email + ", " : "") + (phone != null ? "phone=" + phone + ", " : "")
+				+ (department != null ? "department=" + department + ", " : "")
+				+ (query != null ? "query=" + query + ", " : "") + "adminId=" + adminId + ", createdOn=" + createdOn
+				+ ", " + (status != null ? "status=" + status : "") + "]";
 	}
-
 }

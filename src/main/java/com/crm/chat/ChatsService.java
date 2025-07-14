@@ -22,18 +22,16 @@ import com.crm.user.UserServiceException;
 
 @Service
 public class ChatsService {
-
+	@Autowired
+	private ChatsRepository chatsRepo;
 	@Autowired
 	private UserRepository userRepository;
-
-	@Autowired
-	private SupportRepository supportRepository;
-
-	@Autowired
-	private ChatsRepository chatsRepository;
-	
 	@Autowired
 	private NotificationsRepository notificationsRepository;
+//	@Autowired
+//	private SimpMessagingTemplate messagingTemplate;
+	@Autowired
+	private SupportRepository supportRepository;
 
 	@Transactional
 	public ResponseEntity<Chats> addChats(Chats chats) {
@@ -46,13 +44,14 @@ public class ChatsService {
 				Support support = supportOptional.get();
 
 				chats.setCreatedOn(System.currentTimeMillis());
-				Chats newChats = chatsRepository.save(chats);
+				Chats newChats = chatsRepo.save(chats);
 
 //				messagingTemplate.convertAndSend("/topic/comments", newComment);
 
 				String notificationMessage = "Chats added by " + user.getName() + " (" + user.getRole() + ")" + " for "
 						+ support.getQuery();
-				User supportUserId = support.getUser();
+				Optional<User> supportUser = userRepository.findById(support.getUserId());
+				User supportUserId = supportUser.get();
 
 				if (chats.getUserId() == supportUserId.getId()) {
 					List<User> admins = userRepository.findByRole("Admin");
@@ -78,10 +77,10 @@ public class ChatsService {
 
 	public List<Chats> getChatsByUserId(long userId) {
 		try {
-			if (!chatsRepository.existsByUserId(userId)) {
+			if (!chatsRepo.existsByUserId(userId)) {
 				return Collections.emptyList();
 			} else {
-				return chatsRepository.findByUserId(userId);
+				return chatsRepo.findByUserId(userId);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -90,15 +89,15 @@ public class ChatsService {
 	}
 
 	public List<Chats> getChatsByUserIdAndSupportId(long userId, long supportId) {
-		if (!chatsRepository.existsByUserId(userId) || !chatsRepository.existsBySupportId(supportId)) {
+		if (!chatsRepo.existsByUserId(userId) || !chatsRepo.existsBySupportId(supportId)) {
 			throw new UserServiceException(401, "UserId or SupportId not found");
 		}
-		boolean mappingExists = chatsRepository.existsByUserIdAndSupportId(userId, supportId);
+		boolean mappingExists = chatsRepo.existsByUserIdAndSupportId(userId, supportId);
 		if (!mappingExists) {
 			throw new UserServiceException(401, "userId and supportId are not mapped together");
 		}
 		try {
-			return chatsRepository.findByUserIdAndSupportId(userId, supportId);
+			return chatsRepo.findByUserIdAndSupportId(userId, supportId);
 		} catch (Exception e) {
 			return Collections.emptyList();
 		}
@@ -109,11 +108,11 @@ public class ChatsService {
 
 			List<Map<String, Object>> result = new ArrayList<>();
 
-			if (!chatsRepository.existsBySupportId(supportId)) {
+			if (!chatsRepo.existsBySupportId(supportId)) {
 				throw new UserServiceException(401, "supportId not found");
 			} else {
 
-				List<Chats> bySupportId = chatsRepository.findBySupportId(supportId);
+				List<Chats> bySupportId = chatsRepo.findBySupportId(supportId);
 				for (Chats com : bySupportId) {
 					long userId = com.getUserId();
 					Optional<User> user = userRepository.findById(userId);
@@ -121,24 +120,23 @@ public class ChatsService {
 					String name = userById.getName();
 					String[] words = name.split(" ");
 					String initials = "";
-
 					for (String word : words) {
 						if (!word.isEmpty()) {
 							initials += word.substring(0, 1).toUpperCase();
 						}
 					}
 //					System.out.println("Initials: " + initials);
-					Map<String, Object> commentWithInitials = new HashMap<>();
-					commentWithInitials.put("id", com.getId());
-					commentWithInitials.put("userId", com.getUserId());
-					commentWithInitials.put("supportId", com.getSupportId());
-					commentWithInitials.put("chat", com.getMassages());
-					commentWithInitials.put("createdOn", com.getCreatedOn());
-					commentWithInitials.put("initials", initials);
-					result.add(commentWithInitials);
+					Map<String, Object> chatsWithInitials = new HashMap<>();
+					chatsWithInitials.put("id", com.getId());
+					chatsWithInitials.put("userId", com.getUserId());
+					chatsWithInitials.put("supportId", com.getSupportId());
+					chatsWithInitials.put("massages", com.getMassages());
+					chatsWithInitials.put("createdOn", com.getCreatedOn());
+					chatsWithInitials.put("initials", initials);
+					result.add(chatsWithInitials);
 
 				}
-//				messagingTemplate.convertAndSend("/topic/comments", result);
+//				messagingTemplate.convertAndSend("/topic/Chatss", result);
 
 				return result;
 			}

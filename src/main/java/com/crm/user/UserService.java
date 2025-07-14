@@ -357,8 +357,12 @@ public class UserService {
 				}
 				System.out.println("User found: " + byEmail);
 
-				if (byEmail.getPassword().equals(userPassword) && byEmail.getAction() != Status.BLOCK) {
-					return createResponse(response, byEmail.getEmail(), byEmail.getRole());
+				if (byEmail.getPassword().equals(userPassword)) {
+					if (byEmail.getAction() != Status.BLOCK) {
+						return createResponse(response, byEmail.getEmail(), byEmail.getRole());
+					} else {
+						throw new UserServiceException(409, "Your profile is blocked, please reach to administration.");
+					}
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
 				}
@@ -372,8 +376,12 @@ public class UserService {
 				}
 				System.out.println("Admin found: " + byAdminEmail);
 
-				if (byAdminEmail.getPassword().equals(userPassword) && byAdminEmail.getAction() != Status.BLOCK) {
-					return createResponse(response, byAdminEmail.getEmail(), byAdminEmail.getRole());
+				if (byAdminEmail.getPassword().equals(userPassword)) {
+					if (byAdminEmail.getAction() != Status.BLOCK) {
+						return createResponse(response, byAdminEmail.getEmail(), byAdminEmail.getRole());
+					} else {
+						throw new UserServiceException(409, "Your profile is blocked, please reach to administration.");
+					}
 				} else {
 					throw new UserServiceException(409, "Invalid email and password");
 				}
@@ -513,6 +521,50 @@ public class UserService {
 		}
 	}
 
+	public ResponseEntity<?> getUserDetails(String token) {
+		try {
+			if (jwtUtil.isTokenExpired(token)) {
+				return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+						.body("Unauthorized: Your session has expired.");
+			}
+
+			String role = jwtUtil.extractRole(token);
+
+			Map<String, String> userClaims = jwtUtil.extractRole1(token);
+			String email = userClaims.get("email");
+
+			if ("SALES".equalsIgnoreCase(role) || "CRM".equalsIgnoreCase(role)) {
+				User user = repository.findByEmail(email);
+				if (user != null) {
+					String userObject = getUserObject(user);
+					return ResponseEntity.ok(userObject);
+				} else {
+					throw new UserServiceException(401, "User not exists");
+				}
+			} else if ("ADMIN".equalsIgnoreCase(role) || "SUPER ADMIN".equalsIgnoreCase(role)) {
+				Admins user = adminRepository.findByEmail(email);
+				if (user != null) {
+					String userObject = getUserObject(user);
+					return ResponseEntity.ok(userObject);
+				} else {
+					throw new UserServiceException(401, "User not exists");
+				}
+			} else {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
+
+		} catch (ExpiredJwtException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+					.body("Unauthorized: Your session has expired.");
+		} catch (UserServiceException e) {
+			return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("User not found: " + e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.body("Internal Server Error: " + e.getMessage());
+		}
+	}
+
 	public ResponseEntity<?> updateUserDetails(String token, long userId, User user) {
 		try {
 			System.out.println("Check 1");
@@ -524,11 +576,8 @@ public class UserService {
 
 			String role = jwtUtil.extractRole(token);
 
-			Optional<User> byId = repository.findById(userId);
-			if (byId == null) {
-				throw new UserServiceException(409, "User does not exist");
-			}
-			User dbUser = byId.get();
+			User dbUser = repository.findById(userId)
+					.orElseThrow(() -> new UserServiceException(409, "User does not exist"));
 
 			if (!"ADMIN".equalsIgnoreCase(role) && !dbUser.getRole().equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
@@ -569,18 +618,15 @@ public class UserService {
 
 			String role = jwtUtil.extractRole(token);
 
-			Optional<User> byId = repository.findById(userId);
-			if (byId == null) {
-				throw new UserServiceException(409, "User does not exist");
-			}
-			User dbUser = byId.get();
+			User dbUser = repository.findById(userId)
+					.orElseThrow(() -> new UserServiceException(409, "User does not exist"));
 
 			if (!"ADMIN".equalsIgnoreCase(role)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
 
-			dbUser.setAction(Status.UNBLOCK);
+			dbUser.setAction(response);
 			User existingUser = repository.save(dbUser);
 			String userObject = getUserObject(existingUser);
 			return ResponseEntity.ok(userObject);
@@ -728,7 +774,8 @@ public class UserService {
 				return ResponseEntity.ok("No users found for the role: " + role);
 			}
 
-			List<UserDTO> userDTOs = usersPage.getContent().stream().map(UserDTO::new).collect(Collectors.toList());
+//			List<UserDTO> userDTOs = usersPage.getContent().stream().map(UserDTO::new).collect(Collectors.toList());
+			Page<UserDTO> userDTOs = usersPage.map(UserDTO::new);
 
 			return ResponseEntity.ok(userDTOs);
 
@@ -1092,7 +1139,8 @@ public class UserService {
 			String email = userClaims.get("email");
 
 			System.out.println("User Role: " + userRole + ", Email: " + email);
-			if (!"ADMIN".equalsIgnoreCase(userRole) && !"SALES".equalsIgnoreCase(userRole)) {
+			if (!"ADMIN".equalsIgnoreCase(userRole) && !"SALES".equalsIgnoreCase(userRole)
+					&& !"CRM".equalsIgnoreCase(userRole)) {
 				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
 						.body("Forbidden: You do not have the necessary permissions.");
 			}
@@ -1114,7 +1162,7 @@ public class UserService {
 
 					clients = clientRepository.findByCrmIdIn(crmIds);
 				}
-			} else if ("SALES".equalsIgnoreCase(userRole)) {
+			} else if ("CRM".equalsIgnoreCase(userRole) || "SALES".equalsIgnoreCase(userRole)) {
 				User crmUser = repository.findByEmail(email);
 				if (crmUser == null) {
 					return ResponseEntity.status(HttpServletResponse.SC_NOT_FOUND).body("CRM user not found.");
@@ -1122,7 +1170,12 @@ public class UserService {
 				List<Long> crmIdList = crmUser.getId() != 0
 						? new ArrayList<>(Collections.singletonList(crmUser.getId()))
 						: new ArrayList<>();
-				clients = clientRepository.findBySalesIdIn(crmIdList);
+				if ("CRM".equalsIgnoreCase(userRole)) {
+					clients = clientRepository.findByCrmIdIn(crmIdList);
+				} else {
+					clients = clientRepository.findBySalesIdIn(crmIdList);
+				}
+
 			}
 
 			return ResponseEntity.ok(clients);
