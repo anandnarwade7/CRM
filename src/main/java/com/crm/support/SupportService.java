@@ -289,9 +289,14 @@ public class SupportService {
 			Map<String, String> userClaims = jwtUtil.extractRole1(token);
 			String email = userClaims.get("email");
 			String role = userClaims.get("role");
+		
+			if (!"SUPER ADMIN".equalsIgnoreCase(role) && !"ADMIN".equalsIgnoreCase(role)) {
+				return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN)
+						.body("Forbidden: You do not have the necessary permissions.");
+			}
 
 			Support support = repository.findById(id)
-					.orElseThrow(() -> new UserServiceException(404, "Support ticket not found"));
+					.orElseThrow(() -> new UserServiceException(404, "Support ticket not found"));	
 
 			Object userObj = ("SUPER ADMIN".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role))
 					? adminRepository.findByEmail(email)

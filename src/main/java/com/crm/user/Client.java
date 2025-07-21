@@ -50,6 +50,10 @@ public class Client {
 	@Column(name = "crm_id")
 	private List<Long> crmIds;
 
+	private long clientsLeadId;
+	private String gender;
+	private String jointName;
+
 	public long getId() {
 		return id;
 	}
@@ -175,22 +179,33 @@ public class Client {
 		this.salesId = salesId;
 	}
 
-	@Override
-	public String toString() {
-		return "Client [id=" + id + ", " + (role != null ? "role=" + role + ", " : "")
-				+ (name != null ? "name=" + name + ", " : "") + (email != null ? "email=" + email + ", " : "")
-				+ (mobile != null ? "mobile=" + mobile + ", " : "") + (action != null ? "action=" + action + ", " : "")
-				+ (password != null ? "password=" + password + ", " : "") + (otp != null ? "otp=" + otp + ", " : "")
-				+ (otpCreationTime != null ? "otpCreationTime=" + otpCreationTime + ", " : "") + "createdOn="
-				+ createdOn + ", updatedOn=" + updatedOn + ", "
-				+ (profilePic != null ? "profilePic=" + profilePic + ", " : "")
-				+ (salesId != null ? "salesId=" + salesId + ", " : "") + (crmIds != null ? "crmIds=" + crmIds : "")
-				+ "]";
+	public long getClientsLeadId() {
+		return clientsLeadId;
+	}
+
+	public void setClientsLeadId(long clientsLeadId) {
+		this.clientsLeadId = clientsLeadId;
+	}
+
+	public String getGender() {
+		return gender;
+	}
+
+	public String getJointName() {
+		return jointName;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
+	public void setJointName(String jointName) {
+		this.jointName = jointName;
 	}
 
 	public Client(long id, String role, String name, String email, String mobile, Status action, String password,
 			String otp, LocalDateTime otpCreationTime, long createdOn, long updatedOn, String profilePic,
-			List<Long> salesId, List<Long> crmIds) {
+			List<Long> salesId, List<Long> crmIds, long clientsLeadId, String gender, String jointName) {
 		super();
 		this.id = id;
 		this.role = role;
@@ -206,6 +221,23 @@ public class Client {
 		this.profilePic = profilePic;
 		this.salesId = salesId;
 		this.crmIds = crmIds;
+		this.clientsLeadId = clientsLeadId;
+		this.gender = gender;
+		this.jointName = jointName;
 	}
 
+	@Override
+	public String toString() {
+		return "Client [id=" + id + ", " + (role != null ? "role=" + role + ", " : "")
+				+ (name != null ? "name=" + name + ", " : "") + (email != null ? "email=" + email + ", " : "")
+				+ (mobile != null ? "mobile=" + mobile + ", " : "") + (action != null ? "action=" + action + ", " : "")
+				+ (password != null ? "password=" + password + ", " : "") + (otp != null ? "otp=" + otp + ", " : "")
+				+ (otpCreationTime != null ? "otpCreationTime=" + otpCreationTime + ", " : "") + "createdOn="
+				+ createdOn + ", updatedOn=" + updatedOn + ", "
+				+ (profilePic != null ? "profilePic=" + profilePic + ", " : "")
+				+ (salesId != null ? "salesId=" + salesId + ", " : "")
+				+ (crmIds != null ? "crmIds=" + crmIds + ", " : "") + "clientsLeadId=" + clientsLeadId + ", "
+				+ (gender != null ? "gender=" + gender + ", " : "")
+				+ (jointName != null ? "jointName=" + jointName : "") + "]";
+	}
 }

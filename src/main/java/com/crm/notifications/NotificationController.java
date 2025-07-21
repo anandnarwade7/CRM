@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("http://139.84.136.208 ") })
+		("http://localhost:5174"), ("https://crm.propertysearch.ai"), ("https://users.propertysearch.ai")})
 @RequestMapping("/api/notifications")
 public class NotificationController {
 

@@ -466,7 +466,7 @@ public class ImportLeadService {
 	}
 
 	@Transactional
-	public ImportLead addConversationLogAndDynamicField(Long leadId, Status status, String comment, Long dueDate,
+	public ImportLead addConversationLogAndDynamicField(Long leadId, Status status, String comment, Long dueDate, String gender,
 			List<String> key, List<Object> value) {
 
 		ImportLead lead = repository.findById(leadId)
@@ -508,7 +508,9 @@ public class ImportLeadService {
 				throw new RuntimeException("Error saving dynamic fields", e);
 			}
 		}
-
+		if (gender != null) {
+			lead.setGender(gender);
+		}
 		try {
 			if (status != null) {
 				lead.setStatus(status);
@@ -749,6 +751,7 @@ public class ImportLeadService {
 				client.setMassagesJsonData(lead.getJsonData());
 				client.setDynamicFieldsJson(lead.getDynamicFieldsJson());
 				client.setSalesId(lead.getAssignedTo());
+				client.setGender(lead.getGender());
 
 				sortedCrmUserIds.sort(Comparator.comparingLong(assignedLeadCounts::get));
 				Long selectedCrmId = sortedCrmUserIds.get(currentIndex);
@@ -818,6 +821,9 @@ public class ImportLeadService {
 				client.setCrmIds(crmIdList);
 			}
 
+			client.setClientsLeadId(lead.getId());
+			client.setGender(lead.getGender());
+			client.setName(lead.getLeadName());
 			client.setUpdatedOn(System.currentTimeMillis());
 			clientRepository.save(client);
 		} else {
@@ -830,6 +836,8 @@ public class ImportLeadService {
 			newClient.setUpdatedOn(System.currentTimeMillis());
 			newClient.setAction(Status.UNBLOCK);
 			newClient.setRole("CLIENT");
+			newClient.setClientsLeadId(lead.getId());
+			newClient.setGender(lead.getGender());
 
 			clientRepository.save(newClient);
 		}

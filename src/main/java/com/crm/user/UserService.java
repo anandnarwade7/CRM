@@ -728,8 +728,8 @@ public class UserService {
 				return ResponseEntity.ok("No users found for the role: ADMIN");
 			}
 
-			List<UserDTO> userDTOs = usersPage.getContent().stream().map(UserDTO::new).collect(Collectors.toList());
-
+//			List<UserDTO> userDTOs = usersPage.getContent().stream().map(UserDTO::new).collect(Collectors.toList());
+			Page<UserDTO> userDTOs = usersPage.map(UserDTO::new);
 			return ResponseEntity.ok(userDTOs);
 
 		} catch (ExpiredJwtException e) {

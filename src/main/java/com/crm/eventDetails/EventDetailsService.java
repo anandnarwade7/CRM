@@ -129,15 +129,27 @@ public class EventDetailsService {
 					? jsonNode.get("paidByName").asText()
 					: "";
 
+			Optional<Client> byClientsLeadIdAndCrmId = clientRepository.findByClientsLeadIdAndSalesIdAndCrmId(leadId,
+					salesPersonId, crManagerId);
+			System.out.println("Client found -- " + byClientsLeadIdAndCrmId);
+
+			Client client;
+			if (byClientsLeadIdAndCrmId.isPresent()) {
+				client = byClientsLeadIdAndCrmId.get();
+			} else {
+				throw new UserServiceException(404, "Client not found for given leadId, salesId, and crmId");
+			}
+
 			String statusReportDoc = filesManager.uploadFile(statusReport, "statusReport");
 			String architectsLetterDoc = filesManager.uploadFile(architectsLetter, "architectsLetter");
 			String invoiceDoc = filesManager.uploadFile(invoice, "invoice");
 			String receiptDoc = filesManager.uploadFile(receipt, "receipt");
-			// clientId= 0 (set in following constructor)
-			EventDetails eventDetailsObj = new EventDetails(crManagerId, salesPersonId, leadId, clientId, flatId,
+
+			EventDetails eventDetailsObj = new EventDetails(crManagerId, salesPersonId, leadId, client.getId(), flatId,
 					propertyName, eventName, percentage, basePriceAmount, gstAmount, paidByName, eventDetails,
 					propertyName, invoiceDate, dueDate, paymentDate, paidByName, paidByName, Status.SUBMITTED);
 			System.out.println("check URL :: " + statusReportDoc);
+
 			eventDetailsObj.setStatusReport(statusReportDoc);
 			eventDetailsObj.setArchitectsLetter(architectsLetterDoc);
 			eventDetailsObj.setInvoice(invoiceDoc);
@@ -273,7 +285,7 @@ public class EventDetailsService {
 			String filePath = parts[1].split("&")[0];
 			String fileName = filePath.substring(filePath.lastIndexOf("\\") + 1);
 
-			fileDetails.put("url", fileUrl); 
+			fileDetails.put("url", fileUrl);
 			fileDetails.put("fileName", fileName);
 		} else {
 			fileDetails.put("url", "");

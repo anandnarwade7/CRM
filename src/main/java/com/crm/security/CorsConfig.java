@@ -13,7 +13,7 @@ public class CorsConfig {
 	public CorsFilter corsFilter() {
 		CorsConfiguration corsConfiguration = new CorsConfiguration();
 		corsConfiguration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:5173",
-				"http://localhost:5174", "http://localhost:5175", "http://localhost:5172", "http://139.84.136.208"));
+				"http://localhost:5174", "http://localhost:5175", "http://localhost:5172", "http://139.84.136.208", "https://crm.propertysearch.ai", "https://users.propertysearch.ai"));
 		corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		corsConfiguration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
 		corsConfiguration.setAllowCredentials(true); // Enable cookies

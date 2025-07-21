@@ -53,6 +53,7 @@ public class ImportLead {
 
 	private String leadStatus;
 	private boolean convertedClient;
+	private String gender;
 
 	@Transient
 	private List<Map<String, String>> conversationLogs = new ArrayList<>();
@@ -228,11 +229,19 @@ public class ImportLead {
 		this.leadStatus = leadStatus;
 	}
 
+	public String getGender() {
+		return gender;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
 	public ImportLead(long id, String name, String email, String mobileNumber, long date, long userId, long assignedTo,
 			Status status, String adName, String adSet, String campaign, String city, String callTime,
 			String propertyRange, String jsonData, long importedOn, String salesPerson, String dynamicFieldsJson,
 			String leadStatus, List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields,
-			boolean convertedClient) {
+			boolean convertedClient, String gender) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -256,6 +265,7 @@ public class ImportLead {
 		this.conversationLogs = conversationLogs;
 		this.dynamicFields = dynamicFields;
 		this.convertedClient = convertedClient;
+		this.gender = gender;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -318,13 +328,21 @@ public class ImportLead {
 
 	@Override
 	public String toString() {
-		return "ImportLead [id=" + id + ", name=" + name + ", email=" + email + ", mobileNumber=" + mobileNumber
-				+ ", date=" + date + ", userId=" + userId + ", assignedTo=" + assignedTo + ", status=" + status
-				+ ", adName=" + adName + ", adSet=" + adSet + ", campaign=" + campaign + ", city=" + city
-				+ ", callTime=" + callTime + ", propertyRange=" + propertyRange + ", jsonData=" + jsonData
-				+ ", importedOn=" + importedOn + ", salesPerson=" + salesPerson + ", dynamicFieldsJson="
-				+ dynamicFieldsJson + ", leadStatus=" + leadStatus + ", convertedClient=" + convertedClient
-				+ ", conversationLogs=" + conversationLogs + ", dynamicFields=" + dynamicFields + "]";
+		return "ImportLead [id=" + id + ", " + (name != null ? "name=" + name + ", " : "")
+				+ (email != null ? "email=" + email + ", " : "")
+				+ (mobileNumber != null ? "mobileNumber=" + mobileNumber + ", " : "") + "date=" + date + ", userId="
+				+ userId + ", assignedTo=" + assignedTo + ", " + (status != null ? "status=" + status + ", " : "")
+				+ (adName != null ? "adName=" + adName + ", " : "") + (adSet != null ? "adSet=" + adSet + ", " : "")
+				+ (campaign != null ? "campaign=" + campaign + ", " : "") + (city != null ? "city=" + city + ", " : "")
+				+ (callTime != null ? "callTime=" + callTime + ", " : "")
+				+ (propertyRange != null ? "propertyRange=" + propertyRange + ", " : "")
+				+ (jsonData != null ? "jsonData=" + jsonData + ", " : "") + "importedOn=" + importedOn + ", "
+				+ (salesPerson != null ? "salesPerson=" + salesPerson + ", " : "")
+				+ (dynamicFieldsJson != null ? "dynamicFieldsJson=" + dynamicFieldsJson + ", " : "")
+				+ (leadStatus != null ? "leadStatus=" + leadStatus + ", " : "") + "convertedClient=" + convertedClient
+				+ ", " + (gender != null ? "gender=" + gender + ", " : "")
+				+ (conversationLogs != null ? "conversationLogs=" + conversationLogs + ", " : "")
+				+ (dynamicFields != null ? "dynamicFields=" + dynamicFields : "") + "]";
 	}
 
 }

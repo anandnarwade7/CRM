@@ -610,12 +610,20 @@ public class LeadService {
 	}
 
 	@Transactional
-	public ResponseEntity<?> addConversationLogAndDynamicField(Long clientId, Status status, String comment,
+	public ResponseEntity<?> addConversationLogAndDynamicField(Long clientId, Status status, String jointName, String comment,
 			long dueDate, List<String> key, List<Object> value) {
 
 		LeadDetails client = repository.findById(clientId)
 				.orElseThrow(() -> new RuntimeException("Clients not found with ID: " + clientId));
+		Client clientUser = clientRepository.findByClientsLeadId(clientId)
+				.orElseThrow(() -> new RuntimeException("Client User not found with ID: " + clientId));
 
+
+		if (jointName!= null) {
+			client.setJointName(jointName);
+			clientUser.setJointName(jointName);
+		}
+		
 		if (comment != null && !comment.trim().isEmpty()) {
 			List<Map<String, String>> logs = getConversationLogs(client);
 

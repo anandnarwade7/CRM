@@ -27,7 +27,8 @@ import com.crm.user.UserServiceException;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("http://139.84.136.208"),("crm.propertysearch.ai") })
+		("http://localhost:5174"), ("http://139.84.136.208"), ("https://crm.propertysearch.ai"),
+		("https://users.propertysearch.ai") })
 @RequestMapping("/api/clients")
 public class LeadController {
 
@@ -140,10 +141,12 @@ public class LeadController {
 
 	@PostMapping("/updateFields/{leadId}")
 	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) Status status,
-			@RequestParam(required = false) String comment, @RequestParam(required = false) long dueDate,
-			@RequestParam(required = false) List<String> key, @RequestParam(required = false) List<Object> value) {
+			@RequestParam(required = false) String jointName, @RequestParam(required = false) String comment,
+			@RequestParam(required = false) long dueDate, @RequestParam(required = false) List<String> key,
+			@RequestParam(required = false) List<Object> value) {
 		try {
-			return leadService.addConversationLogAndDynamicField(leadId, status, comment, dueDate, key, value);
+			return leadService.addConversationLogAndDynamicField(leadId, status, jointName, comment, dueDate, key,
+					value);
 		} catch (UserServiceException e) {
 			return ResponseEntity.badRequest().body("Unable to process the request.");
 		} catch (Exception e) {
@@ -183,8 +186,7 @@ public class LeadController {
 	}
 
 	@GetMapping("/getleadcount")
-	public ResponseEntity<?> getUsersCountByRole(
-			@RequestHeader(value = "Authorization", required = true) String token,
+	public ResponseEntity<?> getUsersCountByRole(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam(value = "userId", required = false) Long userId) {
 		try {
 			return leadService.getTotalCountsOfLeads(token, userId);
@@ -193,5 +195,5 @@ public class LeadController {
 					new Error(e.getStatusCode(), e.getMessage(), "Unable to find data", System.currentTimeMillis()));
 		}
 	}
-	
+
 }

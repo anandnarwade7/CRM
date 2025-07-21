@@ -27,7 +27,7 @@ import com.crm.user.UserServiceException;
 @RestController
 @RequestMapping("/api/event")
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("http://139.84.136.208 "), ("crm.propertysearch.ai") })
+		("http://localhost:5174"), ("http://139.84.136.208 "), ("https://crm.propertysearch.ai"), ("https://users.propertysearch.ai") })
 public class EventDetailsController {
 
 //	private String serverDocsUrl = "C:\\CRM\\MediaData\\";

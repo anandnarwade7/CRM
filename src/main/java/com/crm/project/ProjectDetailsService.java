@@ -1084,7 +1084,7 @@ public class ProjectDetailsService {
 							flat.setClientName(client.getName());
 							System.out.println("Check Point 8");
 							FlatBookDetails newEntry = new FlatBookDetails(client.getId(), client.getName(),
-									salesUser.getId(), salesUser.getName(), 0, null, salesUser.getUserId(),
+									salesUser.getId(), salesUser.getName(), lead.getAssignedTo(), null, salesUser.getUserId(),
 									admins.getName(), flatData);
 							bookDetailsRepository.save(newEntry);
 						}
@@ -1127,7 +1127,7 @@ public class ProjectDetailsService {
 		} catch (UserServiceException e) {
 			return ResponseEntity.status(e.getStatusCode()).body(new Error(e.getStatusCode(), e.getMessage(),
 					"Unable to update flats details", System.currentTimeMillis()));
-		} catch (Exception ex) {
+		} catch (Exception ex) {	
 			ex.printStackTrace();
 			throw new UserServiceException(409, "Failed to update details: " + ex.getMessage());
 		}

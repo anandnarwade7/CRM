@@ -25,7 +25,8 @@ import com.crm.user.UserServiceException;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("http://139.84.136.208 "),("crm.propertysearch.ai") })
+		("http://localhost:5174"), ("http://139.84.136.208 "), ("https://crm.propertysearch.ai"),
+		("https://users.propertysearch.ai") })
 @RequestMapping("/api/import")
 public class ImportLeadController {
 
@@ -131,10 +132,11 @@ public class ImportLeadController {
 	@PostMapping("/updateFields/{leadId}")
 	public ResponseEntity<?> addAndUpdateData(@PathVariable Long leadId, @RequestParam(required = false) Status status,
 			@RequestParam(required = false) String comment, @RequestParam(required = false) Long dueDate,
-			@RequestParam(required = false) List<String> key, @RequestParam(required = false) List<Object> value) {
+			@RequestParam(required = false) String gender, @RequestParam(required = false) List<String> key,
+			@RequestParam(required = false) List<Object> value) {
 		try {
-			return ResponseEntity
-					.ok(service.addConversationLogAndDynamicField(leadId, status, comment, dueDate, key, value));
+			return ResponseEntity.ok(
+					service.addConversationLogAndDynamicField(leadId, status, comment, dueDate, gender, key, value));
 		} catch (UserServiceException e) {
 			return ResponseEntity.badRequest().body("Unable to process the request.");
 		} catch (Exception e) {
@@ -156,8 +158,7 @@ public class ImportLeadController {
 	}
 
 	@GetMapping("/getLeadsCount")
-	public ResponseEntity<?> getUsersCountByRole(
-			@RequestHeader(value = "Authorization", required = true) String token,
+	public ResponseEntity<?> getUsersCountByRole(@RequestHeader(value = "Authorization", required = true) String token,
 			@RequestParam(value = "userId", required = false) Long userId) {
 		try {
 			return service.getTotalCountsOfLeads(token, userId);

@@ -53,6 +53,8 @@ public class LeadDetails {
 	private String action;
 	private long createOn;
 	private long salesId;
+	private String gender;
+	private String jointName;
 
 	@Transient
 	private List<Map<String, String>> conversationLogs = new ArrayList<>();
@@ -223,6 +225,22 @@ public class LeadDetails {
 		this.dynamicFieldsJson = dynamicFieldsJson;
 	}
 
+	public String getGender() {
+		return gender;
+	}
+
+	public String getJointName() {
+		return jointName;
+	}
+
+	public void setJointName(String jointName) {
+		this.jointName = jointName;
+	}
+
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+
 	@PrePersist
 	protected void prePersistFunction() {
 		this.createOn = System.currentTimeMillis();
@@ -334,7 +352,8 @@ public class LeadDetails {
 			long assignedTo, Status status, String adName, String adSet, String campaign, String city, String callTime,
 			String propertyRange, String crPerson, String massagesJsonData, String dynamicFieldsJson, String agreement,
 			String stampDuty, String tdsDoc, String bankSanction, String action, long createOn,
-			List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields, long salesId) {
+			List<Map<String, String>> conversationLogs, Map<String, Object> dynamicFields, long salesId, String gender,
+			String jointName) {
 		this.id = id;
 		this.leadName = leadName;
 		this.leadEmail = leadEmail;
@@ -361,17 +380,32 @@ public class LeadDetails {
 		this.conversationLogs = conversationLogs;
 		this.dynamicFields = dynamicFields;
 		this.salesId = salesId;
+		this.gender = gender;
+		this.jointName = jointName;
 	}
 
 	@Override
 	public String toString() {
-		return "LeadDetails [id=" + id + ", leadName=" + leadName + ", leadEmail=" + leadEmail + ", leadmobile="
-				+ leadmobile + ", date=" + date + ", userId=" + userId + ", assignedTo=" + assignedTo + ", status="
-				+ status + ", adName=" + adName + ", adSet=" + adSet + ", campaign=" + campaign + ", city=" + city
-				+ ", callTime=" + callTime + ", propertyRange=" + propertyRange + ", crPerson=" + crPerson
-				+ ", massagesJsonData=" + massagesJsonData + ", dynamicFieldsJson=" + dynamicFieldsJson + ", agreement="
-				+ agreement + ", stampDuty=" + stampDuty + ", tdsDoc=" + tdsDoc + ", bankSanction=" + bankSanction
-				+ ", action=" + action + ", createOn=" + createOn + ", salesId=" + salesId + ", conversationLogs="
-				+ conversationLogs + ", dynamicFields=" + dynamicFields + "]";
+		return "LeadDetails [id=" + id + ", " + (leadName != null ? "leadName=" + leadName + ", " : "")
+				+ (leadEmail != null ? "leadEmail=" + leadEmail + ", " : "")
+				+ (leadmobile != null ? "leadmobile=" + leadmobile + ", " : "") + "date=" + date + ", userId=" + userId
+				+ ", assignedTo=" + assignedTo + ", " + (status != null ? "status=" + status + ", " : "")
+				+ (adName != null ? "adName=" + adName + ", " : "") + (adSet != null ? "adSet=" + adSet + ", " : "")
+				+ (campaign != null ? "campaign=" + campaign + ", " : "") + (city != null ? "city=" + city + ", " : "")
+				+ (callTime != null ? "callTime=" + callTime + ", " : "")
+				+ (propertyRange != null ? "propertyRange=" + propertyRange + ", " : "")
+				+ (crPerson != null ? "crPerson=" + crPerson + ", " : "")
+				+ (massagesJsonData != null ? "massagesJsonData=" + massagesJsonData + ", " : "")
+				+ (dynamicFieldsJson != null ? "dynamicFieldsJson=" + dynamicFieldsJson + ", " : "")
+				+ (agreement != null ? "agreement=" + agreement + ", " : "")
+				+ (stampDuty != null ? "stampDuty=" + stampDuty + ", " : "")
+				+ (tdsDoc != null ? "tdsDoc=" + tdsDoc + ", " : "")
+				+ (bankSanction != null ? "bankSanction=" + bankSanction + ", " : "")
+				+ (action != null ? "action=" + action + ", " : "") + "createOn=" + createOn + ", salesId=" + salesId
+				+ ", " + (gender != null ? "gender=" + gender + ", " : "")
+				+ (jointName != null ? "jointName=" + jointName + ", " : "")
+				+ (conversationLogs != null ? "conversationLogs=" + conversationLogs + ", " : "")
+				+ (dynamicFields != null ? "dynamicFields=" + dynamicFields : "") + "]";
 	}
+
 }

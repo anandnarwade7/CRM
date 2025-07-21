@@ -18,8 +18,7 @@ import com.crm.user.UserServiceException;
 
 @RestController
 @CrossOrigin(origins = { ("http://localhost:5173"), ("http://localhost:3000"), ("http://localhost:3001"),
-		("http://localhost:5174"), ("https://propertysearch.ai"), ("https://mloneusk.lol"), ("http://13.127.78.242"),
-		("http://65.20.75.1") })
+		("http://localhost:5174"), ("http://139.84.136.208 "), ("https://crm.propertysearch.ai"), ("https://users.propertysearch.ai") })
 @RequestMapping("api/chats")
 public class ChatsController {
 
